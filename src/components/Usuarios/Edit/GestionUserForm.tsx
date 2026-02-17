@@ -36,7 +36,7 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
 
     // Filtrar tiendas disponibles (que no estén ya asignadas)
     const tiendDisponibles = stores.filter(
-        (store) => !tiendAsignadas.some((userStore) => userStore.storeID === store.storeID)
+        (store) => !tiendAsignadas.some((userStore) => userStore.storeID === store.storeID),
     )
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -46,11 +46,8 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
         try {
             // Actualizar nombre si cambió
             if (nombre !== usuario.name) {
-                await updateUser(nombre, usuario.email)
+                await updateUser(usuario.userID, { name: nombre })
             }
-
-            // Actualizar tiendas (aquí asumo que necesitarás implementar lógica para sincronizar)
-            // Esta es una implementación simplificada
 
             toast.success("Usuario actualizado exitosamente")
 

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { register } from "@/actions/auth/authActions"
+import { createUser } from "@/actions/users/createUser"
 import { useAuth } from "@/stores/user.store"
 import { toast } from "sonner"
 import { getAllUsers } from "@/actions/users/getAllUsers"
@@ -22,20 +22,21 @@ export default function RegistroForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
-            const data = await register(nombre, email, role, password)
+            await createUser({
+                name: nombre,
+                email: email,
+                role: role as any,
+                password: password,
+            })
 
-            if (data.error) {
-                toast.error(data.error)
-            } else {
-                toast.success("Usuario creado exitosamente")
-                const [usuarios] = await Promise.all([getAllUsers()])
-                setUsers(usuarios)
-                // Limpiar formulario
-                setNombre("")
-                setEmail("")
-                setPassword("")
-                setRole("")
-            }
+            toast.success("Usuario creado exitosamente")
+            const [usuarios] = await Promise.all([getAllUsers()])
+            setUsers(usuarios)
+            // Limpiar formulario
+            setNombre("")
+            setEmail("")
+            setPassword("")
+            setRole("")
         } catch (error) {
             toast.error("Error al crear usuario")
             console.error(error)

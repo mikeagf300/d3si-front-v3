@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner"
 import { useState } from "react"
 import { IUser } from "@/interfaces/users/IUser"
-import { deleteUser } from "@/actions/auth/authActions"
+import { deleteUser } from "@/actions/users/deleteUser"
 import { getAllUsers } from "@/actions/users/getAllUsers"
 import GestionUserForm from "../Edit/GestionUserForm"
 import { Edit, Trash2, User } from "lucide-react"
@@ -17,30 +17,25 @@ interface UsersTableProps {
 
 export default function UsersTable({ users }: UsersTableProps) {
     const { setUsers } = useAuth()
-    const [confirmingEmail, setConfirmingEmail] = useState<string | null>(null)
+    const [confirmingUserId, setConfirmingUserId] = useState<string | null>(null)
     const [editingUser, setEditingUser] = useState<IUser | null>(null)
 
     const handleEdit = (user: IUser) => {
         setEditingUser(user)
-        setConfirmingEmail(null)
+        setConfirmingUserId(null)
     }
 
     const handleCloseModal = () => {
         setEditingUser(null)
     }
 
-    const handleDelete = async (email: string) => {
+    const handleDelete = async (userId: string) => {
         try {
-            const data = await deleteUser(email)
-
-            if (data.error) {
-                toast.error(data.error)
-            } else {
-                toast.success("Usuario eliminado exitosamente")
-                const [usuarios] = await Promise.all([getAllUsers()])
-                setUsers(usuarios)
-                setConfirmingEmail(null)
-            }
+            await deleteUser(userId)
+            toast.success("Usuario eliminado exitosamente")
+            const [usuarios] = await Promise.all([getAllUsers()])
+            setUsers(usuarios)
+            setConfirmingUserId(null)
         } catch (error) {
             toast.error("Error al eliminar usuario")
             console.error(error)
@@ -84,16 +79,16 @@ export default function UsersTable({ users }: UsersTableProps) {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-2">
-                                        {confirmingEmail === usuario.email ? (
+                                        {confirmingUserId === usuario.userID ? (
                                             <>
                                                 <Button
-                                                    onClick={() => handleDelete(usuario.email)}
+                                                    onClick={() => handleDelete(usuario.userID)}
                                                     className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded"
                                                 >
                                                     Confirmar
                                                 </Button>
                                                 <Button
-                                                    onClick={() => setConfirmingEmail(null)}
+                                                    onClick={() => setConfirmingUserId(null)}
                                                     className="bg-gray-200 text-gray-800 px-3 py-1 text-xs rounded hover:bg-gray-300"
                                                 >
                                                     Cancelar
@@ -109,7 +104,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                                                     <span>Editar</span>
                                                 </Button>
                                                 <Button
-                                                    onClick={() => setConfirmingEmail(usuario.email)}
+                                                    onClick={() => setConfirmingUserId(usuario.userID)}
                                                     variant="destructive"
                                                     className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded flex items-center space-x-1"
                                                 >

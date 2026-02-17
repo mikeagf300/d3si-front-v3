@@ -19,15 +19,15 @@ import { API_URL } from "@/lib/enviroments"
  */
 
 export const removeUserFromStore = async (userID: string, storeID: string): Promise<void> => {
-  try {
-    await fetcher<void>(`${API_URL}/store/adduser?userID=${userID}&storeID=${storeID}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userID, storeID }),
-    });
-  } catch (error) {
-    console.error("Error removing user from store:", error);
-  }
-};
+    try {
+        await fetcher<void>(`${API_URL}/stores/adduser?userID=${userID}&storeID=${storeID}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userID, storeID }),
+        })
+    } catch (error) {
+        console.error("Error removing user from store:", error)
+    }
+}

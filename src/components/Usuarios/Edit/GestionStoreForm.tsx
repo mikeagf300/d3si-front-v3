@@ -57,14 +57,14 @@ export default function GestionStoreForm({ isOpen, onClose, tienda }: GestionSto
     const [email, setEmail] = useState(tienda.email)
     const [isAdminLocal, setIsAdminLocal] = useState<boolean>(role === "admin")
     const [gestoresAsignados, setGestoresAsignados] = useState<IUser[]>(
-        users.filter((user) => user.Stores?.some((s) => s.storeID === tienda.storeID)) || []
+        users.filter((user) => user.Stores?.some((s) => s.storeID === tienda.storeID)) || [],
     )
     const [selectedUserId, setSelectedUserId] = useState("")
     const [isLoading, setIsLoading] = useState(false)
 
     // Filtrar usuarios disponibles (que no estén ya asignados como gestores)
     const usuariosDisponibles = users.filter(
-        (user) => !gestoresAsignados.some((gestor) => gestor.userID === user.userID)
+        (user) => !gestoresAsignados.some((gestor) => gestor.userID === user.userID),
     )
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -84,17 +84,16 @@ export default function GestionStoreForm({ isOpen, onClose, tienda }: GestionSto
                 return
             }
             try {
-                await updateStore(
-                    tienda.storeID,
-                    nombre.trim(),
-                    location.trim(),
-                    ciudad.trim(),
-                    address.trim(),
-                    telefono.trim(),
-                    roleSelected.trim(),
-                    email.trim(),
-                    isAdminLocal
-                )
+                await updateStore(tienda.storeID, {
+                    name: nombre.trim(),
+                    location: location.trim(),
+                    city: ciudad.trim(),
+                    address: address.trim(),
+                    phone: telefono.trim(),
+                    role: roleSelected.trim(),
+                    email: email.trim(),
+                    isAdminStore: isAdminLocal,
+                })
             } catch (error) {
                 console.error(error)
             }
