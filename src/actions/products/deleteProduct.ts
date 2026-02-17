@@ -1,14 +1,14 @@
-// src/actions/products/deleteProduct.ts
 import { fetcher } from "@/lib/fetcher"
+import { API_URL } from "@/lib/enviroments"
 
-export async function deleteProduct(productID: string) {
-    return fetcher(`${process.env.NEXT_PUBLIC_API_URL}/products/${productID}`, {
-        method: "DELETE",
-    })
-}
-
-export async function deleteVariation(sku: string) {
-    return fetcher(`${process.env.NEXT_PUBLIC_API_URL}/products/calzado/${sku}`, {
+/**
+ * Elimina un producto por su ID.
+ *
+ * @param id - El ID del producto (productID).
+ * @returns {Promise<{ message: string }>} - Promesa que resuelve con mensaje de confirmación.
+ */
+export async function deleteProduct(id: string): Promise<{ message: string }> {
+    return await fetcher<{ message: string }>(`${API_URL}/products/${id}`, {
         method: "DELETE",
     })
 }

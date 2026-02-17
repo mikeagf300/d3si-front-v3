@@ -16,14 +16,13 @@ import { Role } from "@/lib/userRoles"
 import { inventoryStore } from "@/stores/inventory.store"
 import Image from "next/image"
 import useQueryParams from "@/hooks/useQueryParams"
-import { getProductById } from "@/actions/products/getProductById"
+import { findProductBySku } from "@/utils/findProductBySku"
 import { toPrice } from "@/utils/priceFormat"
 import { PrintbarcodeModal } from "./PrintBarcodeModal"
 import { useState } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { IProductVariation } from "@/interfaces/products/IProductVariation"
 import { toast } from "sonner"
-import { deleteVariation } from "@/actions/products/deleteProduct"
 import { useRouter } from "next/navigation"
 
 interface InventoryTableProps {
@@ -66,19 +65,20 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
     }
     const isEditable = user?.role !== Role.Vendedor && user?.role !== Role.Tercero
 
-    const handleDeleteVariation = async (sku: string) => {
-        const confirm = window.confirm("Estás seguro de eliminar esta variación?")
-        if (confirm) {
-            const confirm2 = window.confirm("¡Esta acción no se puede deshacer!")
-            if (confirm2) {
-                await deleteVariation(sku)
-                toast.success("Eliminado exitosamente")
-                router.refresh()
-            }
-        } else {
-            toast.error("Operación cancelada")
-        }
-    }
+    // TODO: Backend no soporta eliminar variaciones individuales, solo productos completos
+    // const handleDeleteVariation = async (sku: string) => {
+    //     const confirm = window.confirm("Estás seguro de eliminar esta variación?")
+    //     if (confirm) {
+    //         const confirm2 = window.confirm("¡Esta acción no se puede deshacer!")
+    //         if (confirm2) {
+    //             // await deleteVariation(sku)
+    //             toast.success("Eliminado exitosamente")
+    //             router.refresh()
+    //         }
+    //     } else {
+    //         toast.error("Operación cancelada")
+    //     }
+    // }
 
     return (
         <div className="flex-1 flex flex-col">
@@ -122,7 +122,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
 
                         <TableBody>
                             {currentItems.map(({ product, variation, isFirst, totalStock }, index) => {
-                                const productData = getProductById([product], storeID!, variation.sku)
+                                const productData = findProductBySku([product], storeID!, variation.sku)
                                 // Stock agregado = suma de StoreProducts en sucursales (no admin)
                                 const storeFilter = variation.StoreProducts?.filter((sp) => !sp.Store.isAdminStore)
                                 const stockAgregado =
@@ -454,13 +454,14 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </TooltipContent>
                                             </Tooltip>
 
-                                            <div
+                                            {/* TODO: Backend no soporta eliminar variaciones individuales */}
+                                            {/* <div
                                                 title="Eliminar talla"
                                                 className="hidden group-hover:block absolute right-0 top-1/2 -translate-y-1/2"
                                                 onClick={() => handleDeleteVariation(variation.sku)}
                                             >
                                                 <Trash2 />
-                                            </div>
+                                            </div> */}
                                         </TableCell>
                                     </TableRow>
                                 )

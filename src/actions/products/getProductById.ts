@@ -1,23 +1,13 @@
+import { fetcher } from "@/lib/fetcher"
+import { API_URL } from "@/lib/enviroments"
 import { IProduct } from "@/interfaces/products/IProduct"
 
-export const getProductById = (products: IProduct[], storeId: string, skuInput: string) => {
-    for (const product of products) {
-        const variation = product.ProductVariations.find((v) => v.sku === skuInput)
-        if (variation && variation.StoreProducts) {
-            const variationStoreProduct = variation.StoreProducts.find((sp) => sp.storeID === storeId)
-            if (!variationStoreProduct) return null
-
-            return {
-                ...variationStoreProduct,
-                ...variation,
-                name: product.name,
-                image: product.image || "",
-                storeProductID: variationStoreProduct.storeProductID || "",
-                priceList: Number(variation.priceList),
-                stock: variationStoreProduct.quantity ?? 0,
-            }
-        }
-    }
-
-    return null
+/**
+ * Obtiene un producto por su ID desde la API.
+ *
+ * @param id - El ID del producto (productID).
+ * @returns {Promise<IProduct>} - Promesa que resuelve con el producto.
+ */
+export const getProductById = async (id: string): Promise<IProduct> => {
+    return await fetcher<IProduct>(`${API_URL}/products/${id}`)
 }
