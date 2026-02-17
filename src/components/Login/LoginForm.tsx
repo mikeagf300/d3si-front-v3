@@ -28,13 +28,13 @@ export default function LoginForm() {
         try {
             setLoading(true)
             const data = await login(email, password)
-            if (!data.cleanUsr) {
+            if (!data.user) {
                 toast.error("Email o contraseña incorrectos")
                 return
             }
 
-            // Guarda el usuario completo en Zustand
-            setUser(data.cleanUsr)
+            // Guarda el usuario y el token en Zustand
+            setUser(data.user, data.token)
 
             // 2. Cargar y guardar usuarios y tiendas
             const [usuarios, tiendas] = await Promise.all([getAllUsers(), getAllStores()])
@@ -42,12 +42,12 @@ export default function LoginForm() {
             setUsers(usuarios)
             setStores(tiendas)
 
-            const storesFromUser = tiendas.filter((t) => t.Users.some((u) => u.userID === data.cleanUsr.userID))
+            const storesFromUser = tiendas.filter((t) => t.Users.some((u) => u.userID === data.user.userID))
             setStoresUser(storesFromUser)
             setStoreSelected(storesFromUser[0])
             const storeID = storesFromUser[0].storeID
             toast.success("Inicio de sesión exitoso")
-            if (data.cleanUsr.role === Role.Consignado || data.cleanUsr.role === Role.Tercero) {
+            if (data.user.role === Role.Consignado || data.user.role === Role.Tercero) {
                 return router.push(`/home/purchaseOrder?storeID=${storeID}`)
             }
             router.push(`/home?storeID=${storeID}`)

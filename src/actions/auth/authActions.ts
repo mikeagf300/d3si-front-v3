@@ -4,12 +4,14 @@ import { API_URL } from "@/lib/enviroments"
 import { IUser } from "@/interfaces/users/IUser"
 
 type AuthResponse = {
-    message: string
-    cleanUsr: IUser
+    message?: string
+    user: IUser
+    token: string
 }
 
 type ErrorMessage = {
-    error?: string // ← opcional por si no siempre lo trae
+    message?: string
+    error?: string
 }
 
 export async function login(email: string, password: string) {
@@ -32,12 +34,8 @@ export async function register(name: string, email: string, role: string, passwo
     })
 }
 
-export async function deleteUser(email: string) {
-    return await fetcher<AuthResponse & ErrorMessage>(`${API_URL}/users/${email}`, {
-        method: "DELETE",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
+export async function checkStatus() {
+    return await fetcher<AuthResponse>(`${API_URL}/auth/check-status`, {
+        method: "GET",
     })
 }

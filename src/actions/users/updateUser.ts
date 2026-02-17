@@ -3,35 +3,17 @@ import { API_URL } from "@/lib/enviroments"
 import { IUser } from "@/interfaces/users/IUser"
 
 /**
- * Actualiza un IUser en la base de datos mediante una petición HTTP PUT.
- * Utiliza la función `fetcher` para manejar la solicitud.
+ * Actualiza un usuario en la base de datos mediante una petición HTTP PATCH.
  *
- * @param {IUser} IUser - Objeto del IUser que se desea actualizar.
- * Debe incluir el `productID` que será usado para identificar el recurso en la URL.
- *
- * @returns {Promise<void>} - No devuelve nada si la operación es exitosa.
- *
- * @throws {Error} - En caso de error, se muestra un mensaje en la consola.
- *
- * @example
- * await updateUser = {
-    name: nombre,
-    email: email,
-    storeID: tiendaSeleccionada ? parseInt(tiendaSeleccionada) : null
-}
+ * @param id - El ID del usuario (userID).
+ * @param data - Los datos a actualizar { name, role, userImg, password }.
  */
-
-export const updateUser = async ( name: string,email: string ): Promise<void> => {
-   try {
-    await fetcher<void>(`${API_URL}/users/${email}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify( {name} ), 
-    });
-  } catch (error) {
-    console.error("Error updating product", error);
-  }
-};
-
+export const updateUser = async (
+    id: string,
+    data: { name?: string; role?: string; userImg?: string; password?: string },
+): Promise<IUser> => {
+    return await fetcher<IUser>(`${API_URL}/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+    })
+}

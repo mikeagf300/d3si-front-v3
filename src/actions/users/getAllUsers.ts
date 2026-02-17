@@ -13,6 +13,5 @@ import { IUser } from "@/interfaces/users/IUser"
  */
 
 export const getAllUsers = async (): Promise<IUser[]> => {
-    const users: IUser[] = await fetcher(`${API_URL}/users`)
-    return users
+    return await fetcher<IUser[]>(`${API_URL}/users`)
 }

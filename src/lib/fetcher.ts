@@ -12,14 +12,21 @@
  * const user = await fetcher<User>(`${API_URL}/users/123`);
  */
 
+import { useAuth } from "@/stores/user.store"
 import { formatDateToYYYYMMDD } from "@/utils/dateTransforms"
 
 export const fetcher = async <T>(url: string, options: RequestInit = {}): Promise<T> => {
+    const token = useAuth.getState().token
+
+    const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+    }
+
     const response = await fetch(url, {
         ...options,
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers,
         cache: "no-store",
         next: { revalidate: 0 },
     })
