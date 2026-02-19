@@ -3,21 +3,18 @@ import { fetcher } from "@/lib/fetcher"
 import { ICategory } from "@/interfaces/categories/ICategory"
 
 /**
- * crea una categoria padre si solo pasa el nombre, y crea una categoria si pasa el nombre y el parentID
- * Realiza una petición POST a la ruta `/Category` y devuelve los datos como un arreglo de productos.
+ * Crea una nueva categoría.
+ * Si se omite el parentID, se crea como categoría raíz.
+ * Si se incluye el parentID, se crea como subcategoría.
+ * POST /categories
  *
- * @returns {Promise<ICategory[]>} - Promesa que resuelve con un array de objetos `ICategory`.
- * 😊
- * @example
- * const Category = await createCategory();
+ * @param {string} name - Nombre de la categoría.
+ * @param {string} [parentID] - ID de la categoría padre (opcional).
+ * @returns {Promise<ICategory>} - Promesa que resuelve con la categoría creada.
  */
-export async function createCategory(categoyName: string) {
-    const category: ICategory[] = await fetcher(`${API_URL}/categories/`,{
+export async function createCategory(name: string, parentID?: string): Promise<ICategory> {
+    return await fetcher<ICategory>(`${API_URL}/categories`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({name: categoyName }),
+        body: JSON.stringify({ name, ...(parentID ? { parentID } : {}) }),
     })
-    return category
 }

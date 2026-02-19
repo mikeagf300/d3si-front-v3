@@ -1,23 +1,6 @@
-import { API_URL } from "@/lib/enviroments"
-import { fetcher } from "@/lib/fetcher"
-import { ICategory } from "@/interfaces/categories/ICategory"
-
 /**
- * crea una categoria padre si solo pasa el nombre, y crea una categoria si pasa el nombre y el parentID
- * Realiza una petición POST a la ruta `/Category` y devuelve los datos como un arreglo de productos.
- *
- * @returns {Promise<ICategory[]>} - Promesa que resuelve con un array de objetos `ICategory`.
- * 😊
- * @example
- * const Category = await createCategory();
+ * @deprecated Este archivo ya no es necesario.
+ * Usa `createCategory(name, parentID)` de "@/actions/categories/createCategory" en su lugar.
+ * El nuevo backend unifica la creación de categorías y subcategorías en un mismo endpoint.
  */
-export async function createSubategory(categoryFatherID: string, categoyName: string) {
-    const category: ICategory[] = await fetcher(`${API_URL}/categories/`,{
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({name: categoyName, parentID:  categoryFatherID }),
-    })
-    return category
-}
+export {} // archivo mantenido por compatibilidad
