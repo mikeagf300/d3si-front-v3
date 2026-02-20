@@ -7,11 +7,20 @@ import { IUser } from "../users/IUser"
 export type PaymentType = "Efectivo" | "Debito" | "Credito"
 export type PaymentStatus = "Pagado" | "Pendiente" | "Anulado"
 
+export interface ISaleItemRequest {
+    variationID: string
+    quantity: number
+    unitPrice: number
+}
+
 export interface ISaleRequest {
     storeID: string
     paymentType: PaymentType
+    items: ISaleItemRequest[]
+}
+
+export interface IUpdateSaleStatus {
     status: PaymentStatus
-    SaleProducts: Omit<ISaleProduct, "SaleProductID" | "StoreProduct">[]
 }
 
 // Para representar un producto vendido

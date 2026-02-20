@@ -8,13 +8,14 @@ interface ResponseSale {
     total: number
 }
 
+/**
+ * Registra una nueva venta en el sistema.
+ * POST /sales
+ */
 export const createNewSale = async (saleData: ISaleRequest) => {
     try {
-        const data = await fetcher<ResponseSale>(`${API_URL}/sale`, {
+        const data = await fetcher<ResponseSale>(`${API_URL}/sales`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
             body: JSON.stringify(saleData),
         })
         return data

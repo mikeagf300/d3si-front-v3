@@ -2,10 +2,20 @@ import { API_URL } from "@/lib/enviroments"
 import { fetcher } from "@/lib/fetcher"
 import { ISaleResponse } from "@/interfaces/sales/ISale"
 
-export const getSales = async (storeID: string, date: string): Promise<ISaleResponse[]> => {
-    const params = new URLSearchParams({ storeID, date })
-    const newUrl = `${API_URL}/sale?${params.toString()}`
-    const sales = await fetcher<ISaleResponse[]>(newUrl)
+/**
+ * Obtiene todas las ventas registradas.
+ * GET /sales
+ */
+export const getSales = async (storeID?: string, date?: string): Promise<ISaleResponse[]> => {
+    let url = `${API_URL}/sales`
+    if (storeID || date) {
+        const params = new URLSearchParams()
+        if (storeID) params.append("storeID", storeID)
+        if (date) params.append("date", date)
+        url += `?${params.toString()}`
+    }
+
+    const sales = await fetcher<ISaleResponse[]>(url)
 
     // Si hay ventas anuladas, traemos el detalle para obtener la información del Return
     // que usualmente no viene en el listado general
@@ -20,12 +30,16 @@ export const getSales = async (storeID: string, date: string): Promise<ISaleResp
                 }
             }
             return sale
-        })
+        }),
     )
 
     return salesWithDetails
 }
 
+/**
+ * Obtiene el detalle de una venta específica por su ID.
+ * GET /sales/:id
+ */
 export const getSingleSale = async (saleID: string) => {
-    return await fetcher<ISaleResponse>(`${API_URL}/sale/${saleID}`)
+    return await fetcher<ISaleResponse>(`${API_URL}/sales/${saleID}`)
 }

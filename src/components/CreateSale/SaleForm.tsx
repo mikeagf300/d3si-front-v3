@@ -36,11 +36,10 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
             if (!storeSelected) return toast.error("No hay una tienda elegida")
             const toSubmitSale: ISaleRequest = {
                 paymentType: paymentMethod,
-                status: "Pagado",
                 storeID: storeSelected.storeID,
-                SaleProducts: cartItems.map((item) => ({
-                    storeProductID: item.storeProduct.storeProductID,
-                    quantitySold: item.variation.quantity,
+                items: cartItems.map((item) => ({
+                    variationID: item.variation.variationID,
+                    quantity: item.variation.quantity,
                     unitPrice: item.variation.priceList,
                 })),
             }

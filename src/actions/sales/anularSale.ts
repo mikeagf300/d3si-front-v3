@@ -1,5 +1,6 @@
 import { ISendSaleReturn } from "@/interfaces/sales/ISale"
 import { API_URL } from "@/lib/enviroments"
+import { fetcher } from "@/lib/fetcher"
 
 export interface AnularSale {
     saleID: string
@@ -11,11 +12,12 @@ export interface AnularSale {
     }
 }
 
+/**
+ * Anula una venta o registra una devolución.
+ * PUT /sales
+ */
 export const anularSale = async (details: AnularSale) => {
-    // La función fetcher ya maneja la serialización y los errores, devolviendo la promesa
-    console.log({ API_URL })
-    return fetch(`${API_URL}/sale`, {
-        headers: { "Content-Type": "application/json" },
+    return fetcher(`${API_URL}/sales`, {
         method: "PUT",
         body: JSON.stringify(details),
     })
