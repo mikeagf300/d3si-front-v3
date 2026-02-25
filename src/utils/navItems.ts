@@ -17,8 +17,11 @@ export const navItems = [
     },
     {
         label: "Inventario",
-        route: "/home/inventory",
         icon: FaBox,
+        subItems: [
+            { label: "Mi Inventario", route: "/home/inventory" },
+            { label: "Transferencias", route: "/home/transfers" },
+        ],
     },
     {
         label: "Facturación",
