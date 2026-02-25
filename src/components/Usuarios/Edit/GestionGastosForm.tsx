@@ -8,33 +8,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner"
 import ModalGestion from "./ModalGestion"
 import { Receipt, Calendar, DollarSign, Save, X, Tag } from "lucide-react"
-
-interface Gasto {
-    nombre: string
-    categoria: string
-    fechaFactura: string
-    monto: number
-}
+import { createExpense } from "@/actions/expenses/createExpense"
+import { IExpense, ExpenseType } from "@/interfaces/expenses/IExpense"
+import { useTienda } from "@/stores/tienda.store"
 
 interface GestionGastosFormProps {
     isOpen: boolean
     onClose: () => void
-    onSave: (gasto: Gasto) => void
+    onSave: (gasto: IExpense) => void
 }
 
-const CATEGORIAS = [
-    { value: "Gastos de operación", label: "Gastos de operación" },
-    { value: "Gastos de ventas", label: "Gastos de ventas" },
-    { value: "Gastos de administración", label: "Gastos de administración" }
+// Mapeo: label visible ↔ valor que espera la API
+const CATEGORIAS: { value: ExpenseType; label: string }[] = [
+    { value: "operational", label: "Gastos de operación" },
+    { value: "sales", label: "Gastos de ventas" },
+    { value: "administrative", label: "Gastos de administración" },
 ]
 
 export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGastosFormProps) {
+    const { storeSelected } = useTienda()
     const [nombre, setNombre] = useState("")
-    const [categoria, setCategoria] = useState("")
+    const [categoria, setCategoria] = useState<ExpenseType | "">("")
     const [monto, setMonto] = useState("")
     const [isLoading, setIsLoading] = useState(false)
-
-    // Fecha actual para fecha de factura (fija)
     const [fechaFactura, setFechaFactura] = useState(new Date().toISOString().split("T")[0])
     const [isEditingFecha, setIsEditingFecha] = useState(false)
 
@@ -43,36 +39,38 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
         setIsLoading(true)
 
         try {
-            // Validaciones
             if (!nombre.trim()) {
                 toast.error("El nombre del gasto es obligatorio")
                 return
             }
-
             if (!categoria) {
                 toast.error("Debes seleccionar una categoría")
                 return
             }
-
             if (!monto || parseFloat(monto) <= 0) {
                 toast.error("El monto debe ser mayor a 0")
                 return
             }
-
-            const nuevoGasto: Gasto = {
-                nombre: nombre.trim(),
-                categoria,
-                fechaFactura,
-                monto: parseFloat(monto),
+            if (!storeSelected?.storeID) {
+                toast.error("No hay tienda seleccionada")
+                return
             }
+
+            const nuevoGasto = await createExpense({
+                name: nombre.trim(),
+                deductibleDate: new Date(fechaFactura).toISOString(),
+                amount: parseFloat(monto),
+                type: categoria as ExpenseType,
+                storeID: storeSelected.storeID,
+            })
 
             onSave(nuevoGasto)
             toast.success("Gasto agregado exitosamente")
 
-            // Limpiar formulario
             setNombre("")
             setCategoria("")
             setMonto("")
+            setFechaFactura(new Date().toISOString().split("T")[0])
         } catch (error) {
             toast.error("Error al agregar gasto")
             console.error(error)
@@ -82,29 +80,26 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
     }
 
     const handleClose = () => {
-        // Limpiar formulario al cerrar
         setNombre("")
         setCategoria("")
         setMonto("")
         onClose()
     }
 
-    const validateForm = () => {
-        return nombre.trim() !== "" && categoria !== "" && monto !== "" && parseFloat(monto) > 0
-    }
+    const validateForm = () => nombre.trim() !== "" && categoria !== "" && monto !== "" && parseFloat(monto) > 0
 
-    const formatearFecha = (fecha: string) => {
-        return new Date(fecha).toLocaleDateString("es-CL", {
+    const formatearFecha = (fecha: string) =>
+        new Date(fecha).toLocaleDateString("es-CL", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
         })
-    }
+
+    const getLabelCategoria = (val: string) => CATEGORIAS.find((c) => c.value === val)?.label ?? val
 
     return (
         <ModalGestion isOpen={isOpen} onClose={handleClose} title="Agregar Nuevo Gasto" maxWidth="max-w-2xl">
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {/* Información del gasto */}
                 <div className="space-y-4">
                     <div className="flex items-center space-x-2 text-lg font-medium dark:text-white text-gray-700">
                         <Receipt className="w-5 h-5" />
@@ -112,7 +107,7 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
-                        {/* Nombre del gasto */}
+                        {/* Nombre */}
                         <div>
                             <Label className="text-sm font-medium mb-2 flex items-center gap-1">
                                 <Receipt className="w-4 h-4" />
@@ -129,13 +124,13 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                             />
                         </div>
 
-                        {/* Categoría del gasto */}
+                        {/* Categoría */}
                         <div>
                             <Label className="text-sm font-medium mb-2 flex items-center gap-1">
                                 <Tag className="w-4 h-4" />
                                 Categoría *
                             </Label>
-                            <Select value={categoria} onValueChange={setCategoria}>
+                            <Select value={categoria} onValueChange={(v) => setCategoria(v as ExpenseType)}>
                                 <SelectTrigger className="bg-slate-100 dark:border-sky-50 dark:bg-slate-800">
                                     <SelectValue placeholder="Selecciona una categoría" />
                                 </SelectTrigger>
@@ -152,13 +147,12 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                             </p>
                         </div>
 
-                        {/* Fecha de factura (editable al hacer clic) */}
+                        {/* Fecha de factura */}
                         <div>
                             <Label className="text-sm font-medium mb-2 flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
-                                Fecha de Factura (Automática)
+                                Fecha de Factura
                             </Label>
-
                             {isEditingFecha ? (
                                 <Input
                                     type="date"
@@ -176,11 +170,7 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                                     {formatearFecha(fechaFactura)}
                                 </div>
                             )}
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                Esta fecha se establece automáticamente al crear el gasto, pero puedes modificarla si lo
-                                necesitas.
-                            </p>
+                            <p className="text-xs text-gray-500 mt-1">Fecha automática, haz clic para modificar.</p>
                         </div>
 
                         {/* Monto */}
@@ -205,7 +195,7 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                     </div>
                 </div>
 
-                {/* Vista previa del gasto */}
+                {/* Vista previa */}
                 {nombre && categoria && monto && (
                     <div className="bg-blue-50 dark:bg-slate-700 p-4 rounded-lg border border-blue-200 dark:border-slate-600">
                         <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
@@ -216,7 +206,7 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                                 <span className="font-medium">Nombre:</span> {nombre}
                             </p>
                             <p>
-                                <span className="font-medium">Categoría:</span> {categoria}
+                                <span className="font-medium">Categoría:</span> {getLabelCategoria(categoria)}
                             </p>
                             <p>
                                 <span className="font-medium">Fecha Factura:</span> {formatearFecha(fechaFactura)}
@@ -232,7 +222,7 @@ export default function GestionGastosForm({ isOpen, onClose, onSave }: GestionGa
                     </div>
                 )}
 
-                {/* Botones de acción */}
+                {/* Botones */}
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <Button
                         type="button"
