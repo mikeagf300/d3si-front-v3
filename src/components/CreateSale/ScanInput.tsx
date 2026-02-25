@@ -7,6 +7,7 @@ import { IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { IVariationWithQuantity } from "@/interfaces/orders/IOrder"
 import { useTienda } from "@/stores/tienda.store"
 import { toast } from "sonner"
+import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
 
 interface Props {
     initialProducts: IProduct[]
@@ -37,7 +38,7 @@ export const ScanInput = ({ initialProducts }: Props) => {
         if (isEnterPress) {
             e.preventDefault()
             const productFinded = initialProducts.find((p) =>
-                p.ProductVariations.some((v) => v.sku === productInput.trim())
+                p.ProductVariations.some((v) => v.sku === productInput.trim()),
             )
             if (productFinded) {
                 const variationFinded = productFinded.ProductVariations.find((v) => v.sku === productInput.trim())
@@ -47,14 +48,22 @@ export const ScanInput = ({ initialProducts }: Props) => {
                         quantity: 1,
                     }
                     const storeProduct = variationFinded.StoreProducts?.find(
-                        (p) => p.storeID === storeSelected?.storeID && p.variationID === variationFinded.variationID
+                        (p) => p.storeID === storeSelected?.storeID && p.variationID === variationFinded.variationID,
                     )
                     if (storeProduct) {
                         const storeQty: IVariationWithQuantity = {
                             ...variationWithQuantity,
                             stockQuantity: storeProduct.quantity,
                         }
-                        addProduct(productFinded, storeQty, storeProduct)
+
+                        // Consultar precio final con oferta
+                        try {
+                            const check = await getPriceCheck(storeProduct.storeProductID)
+                            addProduct(productFinded, storeQty, storeProduct, check.finalPrice, check.activeOffer)
+                        } catch (error) {
+                            addProduct(productFinded, storeQty, storeProduct)
+                        }
+
                         setProductCode("")
                     } else {
                         const storeProduct: IStoreProduct = {
@@ -68,7 +77,6 @@ export const ScanInput = ({ initialProducts }: Props) => {
                             variationID: variationFinded.variationID,
                         }
                         addProduct(productFinded, { ...variationWithQuantity, quantity: 0 }, storeProduct)
-                        // updateQuantity(variationFinded.sku, 0)
                     }
                 }
             } else {
@@ -112,7 +120,7 @@ export const ScanInput = ({ initialProducts }: Props) => {
                                 }
                                 const storeProductf = variation.StoreProducts?.find(
                                     (p) =>
-                                        p.storeID === storeSelected!.storeID && p.variationID === variation.variationID
+                                        p.storeID === storeSelected!.storeID && p.variationID === variation.variationID,
                                 )
                                 let variationWithQuantity: IVariationWithQuantity = { ...variation, quantity: 1 }
                                 if (storeProductf) {
@@ -125,8 +133,23 @@ export const ScanInput = ({ initialProducts }: Props) => {
                                 return (
                                     <li
                                         key={variation.variationID}
-                                        onClick={() => {
-                                            addProduct(product, variationWithQuantity, storeProduct)
+                                        onClick={async () => {
+                                            if (storeProductf?.storeProductID) {
+                                                try {
+                                                    const check = await getPriceCheck(storeProductf.storeProductID)
+                                                    addProduct(
+                                                        product,
+                                                        variationWithQuantity,
+                                                        storeProduct,
+                                                        check.finalPrice,
+                                                        check.activeOffer,
+                                                    )
+                                                } catch (error) {
+                                                    addProduct(product, variationWithQuantity, storeProduct)
+                                                }
+                                            } else {
+                                                addProduct(product, variationWithQuantity, storeProduct)
+                                            }
                                             setProductCode("")
                                             if (storeProduct.quantity === 0) {
                                                 updateQuantity(variation.sku, 0)
@@ -137,7 +160,7 @@ export const ScanInput = ({ initialProducts }: Props) => {
                                         {product.name} - {variation.sizeNumber}
                                     </li>
                                 )
-                            })
+                            }),
                         )}
                 </ul>
             </div>

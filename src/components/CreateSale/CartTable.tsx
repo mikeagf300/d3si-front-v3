@@ -72,9 +72,27 @@ export const CartTable = () => {
                                 </div>
                             </TableCell>
 
-                            <TableCell className="p-2 text-center">${toPrice(item.variation.priceList)}</TableCell>
-                            <TableCell className="p-2 text-center">
-                                ${toPrice(item.variation.priceList * item.variation.quantity)}
+                            <TableCell className="p-2 text-right">
+                                {item.finalPrice && item.finalPrice < item.variation.priceList ? (
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-xs text-gray-400 line-through">
+                                            ${toPrice(item.variation.priceList)}
+                                        </span>
+                                        <span className="text-sm font-bold text-orange-600">
+                                            ${toPrice(item.finalPrice)}
+                                        </span>
+                                        {item.activeOffer?.description && (
+                                            <span className="text-[10px] text-orange-500 italic">
+                                                {item.activeOffer.description}
+                                            </span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span>${toPrice(item.variation.priceList)}</span>
+                                )}
+                            </TableCell>
+                            <TableCell className="p-2 text-right font-semibold">
+                                ${toPrice((item.finalPrice ?? item.variation.priceList) * item.variation.quantity)}
                             </TableCell>
                             <TableCell className="p-2 text-center">
                                 <button

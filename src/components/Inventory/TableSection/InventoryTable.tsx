@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { MoreVertical, Trash2 } from "lucide-react"
+import { MoreVertical, Trash2, Tag } from "lucide-react"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { AddSizeModal } from "@/components/Modals/AddSizeModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -24,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { IProductVariation } from "@/interfaces/products/IProductVariation"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { PricingModal } from "./PricingModal"
 
 interface InventoryTableProps {
     currentItems: Array<{
@@ -58,6 +59,10 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
     const { searchParams } = useQueryParams()
     const storeID = searchParams.get("storeID")
     const [openSku, setOpenSku] = useState<string | null>(null)
+    const [pricingVariation, setPricingVariation] = useState<{
+        product: IProduct
+        variation: IProductVariation
+    } | null>(null)
     const router = useRouter()
 
     const printBarcodeModal = (sku: string | null) => {
@@ -348,6 +353,26 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                         Markup:{" "}
                                                         {calculateMarkup(variation.priceCost, variation.priceList)}
                                                     </span>
+                                                    {/* Botón Pricing - solo admins */}
+                                                    {user?.role === Role.Admin && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setPricingVariation({ product, variation })
+                                                                    }}
+                                                                    className="flex items-center gap-1 px-2 py-0.5 mt-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                                                >
+                                                                    <Tag className="w-3 h-3" />
+                                                                    Pricing
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Ver historial, ofertas y precio final
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
                                                 </div>
                                             )}
                                         </TableCell>
@@ -470,6 +495,37 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                     </Table>
                 </div>
             </div>
+            {/* Modal de Pricing */}
+            <PricingModalWrapper
+                pricingVariation={pricingVariation}
+                setPricingVariation={setPricingVariation}
+                storeID={storeID}
+            />
         </div>
+    )
+}
+
+// ── Renderizar PricingModal fuera del loop de tablas ───────────────────────────
+function PricingModalWrapper({
+    pricingVariation,
+    setPricingVariation,
+    storeID,
+}: {
+    pricingVariation: { product: IProduct; variation: IProductVariation } | null
+    setPricingVariation: (v: null) => void
+    storeID: string | null
+}) {
+    if (!pricingVariation || !storeID) return null
+    const { product, variation } = pricingVariation
+    const storeProduct = variation.StoreProducts?.find((sp) => sp.storeID === storeID)
+    return (
+        <PricingModal
+            isOpen
+            onClose={() => setPricingVariation(null)}
+            product={product}
+            variation={variation}
+            storeProduct={storeProduct}
+            storeID={storeID}
+        />
     )
 }

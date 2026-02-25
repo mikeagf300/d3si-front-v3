@@ -22,7 +22,8 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
 
     const total = useMemo(() => {
         return cartItems.reduce((acc, item) => {
-            return acc + item.variation.quantity * item.variation.priceList
+            const price = item.finalPrice ?? item.variation.priceList
+            return acc + item.variation.quantity * price
         }, 0)
     }, [cartItems])
 
@@ -40,7 +41,7 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
                 items: cartItems.map((item) => ({
                     variationID: item.variation.variationID,
                     quantity: item.variation.quantity,
-                    unitPrice: item.variation.priceList,
+                    unitPrice: item.finalPrice ?? item.variation.priceList,
                 })),
             }
 

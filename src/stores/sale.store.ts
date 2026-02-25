@@ -6,10 +6,14 @@ import { IProduct } from "@/interfaces/products/IProduct"
 import { IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { IVariationWithQuantity } from "@/interfaces/orders/IOrder"
 
+import { IOffer } from "@/interfaces/pricing/IPricing"
+
 interface SaleItem {
     product: IProduct
     variation: IVariationWithQuantity
     storeProduct: IStoreProduct
+    finalPrice?: number
+    activeOffer?: IOffer
 }
 
 interface SaleState {
@@ -17,7 +21,13 @@ interface SaleState {
     paymentMethod: PaymentType
     loading: boolean
     actions: {
-        addProduct: (product: IProduct, variation: IVariationWithQuantity, storeProduct: IStoreProduct) => void
+        addProduct: (
+            product: IProduct,
+            variation: IVariationWithQuantity,
+            storeProduct: IStoreProduct,
+            finalPrice?: number,
+            activeOffer?: IOffer,
+        ) => void
         removeProduct: (sku: string) => void
         updateQuantity: (sku: string, quantity: number) => void
         setPaymentMethod: (method: PaymentType) => void
@@ -30,15 +40,15 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     paymentMethod: "Efectivo",
     loading: false,
     actions: {
-        addProduct: (product, variation, storeProduct) => {
+        addProduct: (product, variation, storeProduct, finalPrice, activeOffer) => {
             const { storeSelected } = useTienda.getState()
             if (!storeSelected) {
                 toast.error("Debes elegir una tienda")
                 return
-            } // Es importante verificar el stock en el carrito, no solo en la variación que se pasa
+            }
             const { cartItems } = get()
 
-            const existingItem = cartItems.find((p) => p.variation.sku === variation.sku) // Stock a comparar: si ya existe, usamos su stock actual, si no, usamos el stock de la variación pasada.
+            const existingItem = cartItems.find((p) => p.variation.sku === variation.sku)
             const stockQuantity = existingItem ? existingItem.variation.stockQuantity : variation.stockQuantity
             const currentQuantity = existingItem ? existingItem.variation.quantity : 0
             if (currentQuantity + 1 > stockQuantity) {
@@ -61,13 +71,14 @@ export const useSaleStore = create<SaleState>((set, get) => ({
                 })
                 set({ cartItems: newCartItems })
             } else {
-                // El producto NO existe, se agrega con cantidad 1.
                 const newCartItems = [
                     ...cartItems,
                     {
                         product,
                         storeProduct,
                         variation: { ...variation, quantity: 1 },
+                        finalPrice,
+                        activeOffer,
                     },
                 ]
                 set({ cartItems: newCartItems })
@@ -82,7 +93,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
         updateQuantity: (sku, quantity) => {
             set((state) => {
                 const newCartItems = state.cartItems.map((item) =>
-                    item.variation.sku === sku ? { ...item, variation: { ...item.variation, quantity } } : item
+                    item.variation.sku === sku ? { ...item, variation: { ...item.variation, quantity } } : item,
                 )
                 return { cartItems: newCartItems }
             })
