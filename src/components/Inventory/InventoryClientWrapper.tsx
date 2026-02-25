@@ -12,6 +12,7 @@ import type { IProduct } from "@/interfaces/products/IProduct"
 import type { ICategory } from "@/interfaces/categories/ICategory"
 import type { IStore } from "@/interfaces/stores/IStore"
 import { useAuth } from "@/stores/user.store"
+import { useTienda } from "@/stores/tienda.store"
 import { Role } from "@/lib/userRoles"
 import { CreateProductFormData } from "@/interfaces/products/ICreateProductForm"
 import { inventoryStore } from "@/stores/inventory.store"
@@ -19,6 +20,7 @@ import { useCategories } from "@/stores/categories.store"
 import { InventoryTable } from "./TableSection/InventoryTable"
 import InventoryHeader from "./HeaderSetion/InventoryHeader"
 import { useInventory } from "@/hooks/useInventory"
+import { createInventoryMovement } from "@/actions/inventory/createInventoryMovement"
 
 interface Props {
     initialProducts: IProduct[]
@@ -28,6 +30,7 @@ interface Props {
 
 export default function UnifiedInventoryClientWrapper({ initialProducts, categories: cats, stores }: Props) {
     const { user } = useAuth()
+    const { storeSelected } = useTienda()
     const { categories, setCategories } = useCategories()
     const {
         rawProducts,
@@ -65,7 +68,7 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
 
     function handleDeleteProduct(product: IProduct) {
         const confirm = window.confirm(
-            `¿Estás seguro de que deseas eliminar el producto "${product.name}"? Esta acción no se puede revertir.`
+            `¿Estás seguro de que deseas eliminar el producto "${product.name}"? Esta acción no se puede revertir.`,
         )
         if (!confirm) return
 
@@ -106,7 +109,7 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
                 loading: "Actualizando producto...",
                 success: () => {
                     setRawProducts(
-                        rawProducts.map((p) => (p.productID === product.productID ? { ...p, [field]: editValue } : p))
+                        rawProducts.map((p) => (p.productID === product.productID ? { ...p, [field]: editValue } : p)),
                     )
                     setEditingField(null)
                     return "Campo actualizado"
@@ -118,6 +121,7 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
 
         const variation = product.ProductVariations.find((v) => v.variationID === variationID)
         if (!variation) return
+        const newStockValue = field === "stockQuantity" ? Number(editValue) : variation.stockQuantity
         const updated = {
             name: product.name,
             image: product.image,
@@ -130,36 +134,56 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
                     sizeNumber: field === "sizeNumber" ? editValue : variation.sizeNumber,
                     priceList: field === "priceList" ? Number(editValue) : variation.priceList,
                     priceCost: field === "priceCost" ? Number(editValue) : variation.priceCost,
-                    stockQuantity: field === "stockQuantity" ? Number(editValue) : variation.stockQuantity,
+                    stockQuantity: newStockValue,
                 },
             ],
         } as CreateProductFormData
 
-        toast.promise(createMassiveProducts({ products: [updated] }), {
-            loading: "Actualizando producto...",
-            success: () => {
-                setRawProducts(
-                    rawProducts.map((p) =>
-                        p.productID === product.productID
-                            ? {
-                                  ...p,
-                                  ProductVariations: p.ProductVariations.map((v) =>
-                                      v.variationID === variationID
-                                          ? {
-                                                ...v,
-                                                [field]: field === "sizeNumber" ? editValue : Number(editValue),
-                                            }
-                                          : v
-                                  ),
-                              }
-                            : p
+        toast.promise(
+            createMassiveProducts({ products: [updated] }).then(async (res) => {
+                // Si se editó el stock, registrar el movimiento en el módulo de inventario
+                if (field === "stockQuantity" && storeSelected?.storeID) {
+                    const diff = newStockValue - variation.stockQuantity
+                    try {
+                        await createInventoryMovement({
+                            storeID: storeSelected.storeID,
+                            variationID: variation.variationID,
+                            reason: "ADJUSTMENT",
+                            quantity: diff,
+                            newStock: newStockValue,
+                        })
+                    } catch (e) {
+                        console.warn("Movimiento de inventario no registrado:", e)
+                    }
+                }
+                return res
+            }),
+            {
+                loading: "Actualizando producto...",
+                success: () => {
+                    setRawProducts(
+                        rawProducts.map((p) =>
+                            p.productID === product.productID
+                                ? {
+                                      ...p,
+                                      ProductVariations: p.ProductVariations.map((v) =>
+                                          v.variationID === variationID
+                                              ? {
+                                                    ...v,
+                                                    [field]: field === "sizeNumber" ? editValue : Number(editValue),
+                                                }
+                                              : v,
+                                      ),
+                                  }
+                                : p,
+                        ),
                     )
-                )
-                setEditingField(null)
-                return "Campo actualizado"
+                    setEditingField(null)
+                    return "Campo actualizado"
+                },
+                error: "Error al actualizar",
             },
-            error: "Error al actualizar",
-        })
+        )
     }
 
     return (
