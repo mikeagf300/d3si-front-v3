@@ -12,10 +12,10 @@ import { deleteOrder } from "@/actions/orders/deleteOrder"
 import { useAuth } from "@/stores/user.store"
 import { Role } from "@/lib/userRoles"
 import { useReactToPrint } from "react-to-print"
-import { ISingleOrderResponse } from "@/interfaces/orders/IOrder"
+import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { useEditOrderStore } from "@/stores/order.store"
 import { useRouter } from "next/navigation"
-import { updateOrder } from "@/actions/orders/updateOrder"
+import { updatePurchaseOrder } from "@/actions/purchase-orders/updatePurchaseOrder"
 import { Button } from "../ui/button"
 import { PrintOrderView } from "./PrintOrderView"
 import { useOrderInitialization } from "@/hooks/useOrderInitialization"
@@ -25,7 +25,7 @@ const MemoizedStoreInfo = React.memo(StoreInfo)
 const MemoizedProductsTable = React.memo(ProductsTable)
 
 interface Props {
-    order: ISingleOrderResponse
+    order: IPurchaseOrder
     allProducts: IProduct[]
 }
 
@@ -73,10 +73,11 @@ export default function OrderDetail({ order, allProducts }: Props) {
     const printOrderData = useMemo(() => {
         return {
             ...order,
-            ProductVariations: order.ProductVariations.map((v) => ({
-                ...v,
-                quantityOrdered: v.OrderProduct.quantityOrdered,
-                priceCost: v.OrderProduct.priceCost,
+            orderID: order.purchaseOrderID,
+            ProductVariations: (order.PurchaseOrderItems || []).map((poi) => ({
+                ...poi.variation,
+                quantityOrdered: poi.quantity,
+                priceCost: poi.unitPrice,
             })),
         }
     }, [order])
@@ -105,22 +106,23 @@ export default function OrderDetail({ order, allProducts }: Props) {
             setLoading(true)
             // Access current state directly to avoid subscription in render cycle
             const currentState = useEditOrderStore.getState()
-            const { actions, newProducts, ...editedOrder } = currentState
 
-            const toNewProducts = newProducts.map((p) => p.variation).filter((v) => v.quantity > 0)
-            const newProductsClean = toNewProducts.map((p) => ({ ...p, priceCost: Math.round(p.priceCost) }))
-            const discountVal = Number(editedOrder.discount) || 0
-            const toUpdate = { ...editedOrder, discount: discountVal, newProducts: newProductsClean }
+            const payload = {
+                discount: Number(currentState.discount) || 0,
+                dteNumber: currentState.dte || "",
+                // Otros campos pueden ser añadidos aquí si el store los maneja
+            }
 
-            await updateOrder(toUpdate)
+            await updatePurchaseOrder(order.purchaseOrderID, payload)
             toast.success("Orden actualizada correctamente")
+            router.refresh()
         } catch (e) {
             console.log(e)
             toast.error("Error al actualizar la orden")
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [order.purchaseOrderID, router])
 
     // Handler para eliminar la orden
     const handleDelete = useCallback(async () => {
@@ -128,10 +130,11 @@ export default function OrderDetail({ order, allProducts }: Props) {
         if (confirm("¿Estás seguro de que quieres anular esta orden?")) {
             try {
                 setLoading(true)
-                await deleteOrder(order.orderID)
+                await deleteOrder(order.purchaseOrderID)
                 router.push("/home/invoices")
                 toast.success("Orden anulada correctamente")
                 clearCart()
+                router.refresh()
             } catch (e) {
                 console.log(e)
                 toast.error("Error al anular la orden")
@@ -144,7 +147,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
     return (
         <div className="bg-white min-h-screen dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4">
             <div style={{ display: "none" }}>
-                <PrintOrderView ref={printRef} order={printOrderData} />
+                <PrintOrderView ref={printRef} order={printOrderData as any} />
             </div>
             <div className="max-w-5xl mx-auto print-container">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700 mb-6">
@@ -184,7 +187,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
                             <div className="flex gap-2">
                                 <button
                                     className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded shadow text-sm"
-                                    onClick={() => router.push(`/home/order/${order.orderID}/verify`)}
+                                    onClick={() => router.push(`/home/order/${order.purchaseOrderID}/verify`)}
                                 >
                                     Verificar Productos
                                 </button>

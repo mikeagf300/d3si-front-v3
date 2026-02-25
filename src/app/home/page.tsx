@@ -14,8 +14,8 @@ import { salesToResume } from "@/utils/saleToResume"
 import { Suspense } from "react"
 import SalesAndResumeSkeleton from "@/components/skeletons/SalesAndResume"
 import { totalDebitoCredito } from "@/utils/totalsDebitoCredito"
-import { getAllOrders } from "@/actions/orders/getAllOrders"
-import { IOrderWithStore } from "@/interfaces/orders/IOrderWithStore"
+import { getAllPurchaseOrders } from "@/actions/purchase-orders/getAllPurchaseOrders"
+import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ChartBarIcon } from "lucide-react"
 import { SaleForm } from "@/components/CreateSale/SaleForm"
@@ -52,7 +52,7 @@ const HomePage = async ({ searchParams }: SearchParams) => {
         getSales(apiSalesStoreID || "", yyyyDate),
         getWooCommerceOrders(newDate),
         getResume(chartStoreID || "", yyyyDate),
-        getAllOrders(),
+        getAllPurchaseOrders(),
         getAllProducts(),
     ])
     const wooSales = wooOrders.map(mapWooOrderToSale)
@@ -75,19 +75,13 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const filteredWooSales = storeID === "all" || storeID === "propias" ? wooSales : []
 
     const allSales = [...tableSales, ...filteredWooSales]
-    const purchaseOrders: (IOrderWithStore & { isOrder: true })[] = allOrders
+    const purchaseOrders: (IPurchaseOrder & { isOrder: true })[] = allOrders
         .filter((order) => {
             if (storeID === "all") return true
             const store = allStores.find((s) => s.storeID === order.storeID)
             if (storeID === "propias") return store?.isAdminStore === true
             if (storeID === "consignadas") return store?.isAdminStore === false
             return order.storeID === storeID
-        })
-        .filter((order) => {
-            // Si es filtro "all" o "consignadas", incluimos todo.
-            // Si es "propias", evitamos las de consignación pura si es necesario.
-            // Por defecto, permitimos todas las OC en la vista global.
-            return true
         })
         .map((order) => ({ ...order, isOrder: true }))
 

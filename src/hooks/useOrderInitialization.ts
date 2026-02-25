@@ -1,10 +1,10 @@
 import { useEffect } from "react"
 import { useEditOrderStore } from "@/stores/order.store"
-import { ISingleOrderResponse } from "@/interfaces/orders/IOrder"
+import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { useLoadingToaster } from "@/stores/loading.store"
 import { toast } from "sonner"
 
-export const useOrderInitialization = (order: ISingleOrderResponse) => {
+export const useOrderInitialization = (order: IPurchaseOrder) => {
     const { actions } = useEditOrderStore()
     const { addProduct, updateOrderStringField, clearCart } = actions
     const { activeToastId, setToastId } = useLoadingToaster()
@@ -12,31 +12,32 @@ export const useOrderInitialization = (order: ISingleOrderResponse) => {
     // Carga la orden en el store global de zustand
     useEffect(() => {
         clearCart()
-        const { ProductVariations, newProducts, Store, ...restOrder } = order
-        const arrFields = Object.entries(restOrder)
+        const { PurchaseOrderItems, ...restOrder } = order
 
-        arrFields.forEach(([field, value]) => {
-            // Aseguramos que discount se trate correctamente si viene como número
-            if (field === "discount" && typeof value === "number") {
-                updateOrderStringField(field as any, value)
-            } else {
-                updateOrderStringField(field as any, value)
-            }
-        })
+        // Mapeo manual de campos para compatibilidad con el store existente
+        updateOrderStringField("orderID", order.purchaseOrderID)
+        updateOrderStringField("storeID", order.storeID)
+        updateOrderStringField("userID", order.userID)
+        updateOrderStringField("total", order.total)
+        updateOrderStringField("status", order.status)
+        updateOrderStringField("discount", order.discount)
+        updateOrderStringField("createdAt", order.createdAt)
+        updateOrderStringField("updatedAt", order.updatedAt)
 
-        order.ProductVariations.forEach((v) => {
-            const variationWithQuantity = {
-                ...v,
-                quantity: v.OrderProduct.quantityOrdered,
-                priceCost: v.OrderProduct.priceCost,
-            }
-            addProduct(v.Product, variationWithQuantity)
-        })
+        if (order.PurchaseOrderItems) {
+            order.PurchaseOrderItems.forEach((poi) => {
+                const variationWithQuantity = {
+                    ...poi.variation,
+                    quantity: poi.quantity,
+                    priceCost: poi.unitPrice,
+                }
+                addProduct(poi.variation.Product, variationWithQuantity)
+            })
+        }
     }, [order, addProduct, updateOrderStringField, clearCart])
 
     useEffect(() => {
         if (activeToastId) {
-            console.log(activeToastId)
             toast.success("Orden cargada!", { id: activeToastId })
             setToastId(null)
         }

@@ -1,7 +1,7 @@
-import { IOrderWithStore } from "../orders/IOrderWithStore"
 import { IStore } from "../stores/IStore"
+import { IPurchaseOrder } from "../orders/IPurchaseOrder"
 
 export interface InvoicesClientProps {
-    initialOrders: IOrderWithStore[]
+    initialOrders: IPurchaseOrder[]
     stores: IStore[]
 }

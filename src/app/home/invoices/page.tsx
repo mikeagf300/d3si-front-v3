@@ -1,9 +1,9 @@
-import { getAllOrders } from "@/actions/orders/getAllOrders"
+import { getAllPurchaseOrders } from "@/actions/purchase-orders/getAllPurchaseOrders"
 import { getAllStores } from "@/actions/stores/getAllStores"
 import InvoicesClient from "@/components/Invoices/InvoicesClient"
 
 export default async function InvoicesPage() {
-    const [orders, stores] = await Promise.all([getAllOrders(), getAllStores()])
+    const [orders, stores] = await Promise.all([getAllPurchaseOrders(), getAllStores()])
 
     return (
         <main className="p-6">

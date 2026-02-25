@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react"
 import { useTienda } from "@/stores/tienda.store"
-import { IOrderWithStore } from "@/interfaces/orders/IOrderWithStore"
+import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { deleteOrder } from "@/actions/orders/deleteOrder"
 import { InvoicesClientProps } from "@/interfaces/invoices/IInvoices"
 import { useAuth } from "@/stores/user.store"
@@ -19,7 +18,7 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
     const { user } = useAuth()
     const { storeSelected } = useTienda()
     const { setToastId } = useLoadingToaster()
-    const [orders, setOrders] = useState<IOrderWithStore[]>([])
+    const [orders, setOrders] = useState<IPurchaseOrder[]>([])
 
     const isStoreManager = user?.role === Role.Vendedor
     const isAdmin = user?.role === Role.Admin
@@ -31,13 +30,14 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
     const handleDelete = async (orderID: string) => {
         if (confirm("¿Estás seguro de que quieres borrar esta orden?")) {
             await deleteOrder(orderID)
-            setOrders((prev) => prev.filter((order) => order.orderID !== orderID))
+            setOrders((prev) => prev.filter((order) => order.purchaseOrderID !== orderID))
+            route.refresh()
         }
     }
 
     useEffect(() => {
         // Filtrar órdenes según el rol
-        let filteredOrders: IOrderWithStore[] = []
+        let filteredOrders: IPurchaseOrder[] = []
 
         if (isAdmin) {
             filteredOrders = initialOrders
@@ -56,8 +56,8 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
         const statusConfig = {
             Pendiente: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
             Pagado: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-            Anulado: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-            "En proceso": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+            Cancelado: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+            Recibido: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
         }
         return (
             statusConfig[status as keyof typeof statusConfig] ||
@@ -90,18 +90,18 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
                         const totalConIVA = Math.round(total * 1.19)
                         return (
                             <TableRow
-                                key={order.orderID}
+                                key={order.purchaseOrderID}
                                 onClick={() => {
                                     const tId = toast.loading(`Cargando orden de ${order.Store?.name ?? "tienda"}`)
                                     setToastId(tId as number)
-                                    route.push(`/home/order/${order.orderID}`)
+                                    route.push(`/home/order/${order.purchaseOrderID}`)
                                 }}
                                 className="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer hover:scale-[1.02] transition-all"
                             >
                                 <TableCell>{i + 1}</TableCell>
                                 <TableCell>
                                     <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono">
-                                        {order.orderID.slice(0, 8)}
+                                        {order.purchaseOrderID.slice(0, 8)}
                                     </code>
                                 </TableCell>
                                 <TableCell>{fecha}</TableCell>
@@ -115,7 +115,7 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
                                 <TableCell>
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(
-                                            order.status
+                                            order.status,
                                         )}`}
                                     >
                                         {order.status}
