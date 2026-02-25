@@ -17,6 +17,12 @@ export const getSales = async (storeID?: string, date?: string): Promise<ISaleRe
 
     const sales = await fetcher<ISaleResponse[]>(url)
 
+    // Validamos que sales sea un array para evitar el error "sales.map is not a function"
+    if (!Array.isArray(sales)) {
+        console.warn("getSales: La respuesta de la API no es un array:", sales)
+        return []
+    }
+
     // Si hay ventas anuladas, traemos el detalle para obtener la información del Return
     // que usualmente no viene en el listado general
     const salesWithDetails = await Promise.all(

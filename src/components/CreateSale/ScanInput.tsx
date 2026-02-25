@@ -21,6 +21,8 @@ export const ScanInput = ({ initialProducts }: Props) => {
     const parentProductFinded = useMemo(() => {
         const inputTokens = productInput.toLowerCase().trim().split(/\s+/)
 
+        if (!Array.isArray(initialProducts)) return []
+
         return initialProducts.filter((p) => {
             const nameTokens = p.name.toLowerCase().split(/\s+/)
 

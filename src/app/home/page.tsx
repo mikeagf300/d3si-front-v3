@@ -93,7 +93,34 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const chartSales = isSpecialFilter ? sales.filter((s) => s.storeID === chartStoreID) : sales
 
     const localSalesResume = salesToResume(chartSales, newDate)
-    const patchedSalesResume = { ...resume.totales.sales }
+    const patchedSalesResume = resume?.totales?.sales
+        ? { ...resume.totales.sales }
+        : {
+              today: {
+                  total: { count: 0, amount: 0 },
+                  efectivo: { count: 0, amount: 0 },
+                  debitoCredito: { count: 0, amount: 0 },
+              },
+              yesterday: {
+                  total: { count: 0, amount: 0 },
+                  efectivo: { count: 0, amount: 0 },
+                  debitoCredito: { count: 0, amount: 0 },
+              },
+              last7: {
+                  total: { count: 0, amount: 0 },
+                  efectivo: { count: 0, amount: 0 },
+                  debitoCredito: { count: 0, amount: 0 },
+              },
+              month: {
+                  total: { count: 0, amount: 0 },
+                  efectivo: { count: 0, amount: 0 },
+                  debitoCredito: { count: 0, amount: 0 },
+              },
+          }
+
+    if (!resume?.totales?.sales) {
+        console.warn("HomePage: El resumen (resume.totales.sales) no es válido o está incompleto:", resume)
+    }
 
     // Corregimos discrepancias en los totales del backend (que a veces ignora ventas anuladas parcialmente)
     // usando nuestra lógica local para la fecha seleccionada.
@@ -123,10 +150,12 @@ const HomePage = async ({ searchParams }: SearchParams) => {
         patchedSalesResume.last7.debitoCredito.amount += diffDebitoAmount
         patchedSalesResume.last7.debitoCredito.count += diffDebitoCount
 
-        resume.totales.sales = patchedSalesResume
+        if (resume?.totales) {
+            resume.totales.sales = patchedSalesResume
+        }
     }
 
-    const allSalesResume = totalDebitoCredito([resume.totales.sales, wooResume])
+    const allSalesResume = totalDebitoCredito([patchedSalesResume, wooResume])
 
     return (
         <>

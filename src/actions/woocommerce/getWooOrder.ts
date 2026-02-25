@@ -11,6 +11,10 @@ export const getWooCommerceOrders = async (date: Date): Promise<WooCommerceOrder
         date.setHours(23, 59, 59, 999)
         const params = new URLSearchParams({ before: date.toISOString(), after: after.toISOString() })
         const orders = await wooFetcher<WooCommerceOrder[]>(`orders?${params.toString()}`)
+        if (!Array.isArray(orders)) {
+            console.warn("getWooCommerceOrders: La respuesta no es un array:", orders)
+            return []
+        }
         return orders
     } catch (error) {
         console.error(error)

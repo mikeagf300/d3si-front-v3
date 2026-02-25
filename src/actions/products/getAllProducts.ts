@@ -15,5 +15,10 @@ export const getAllProducts = async (limit?: number, offset?: number): Promise<I
     if (offset !== undefined) params.append("offset", offset.toString())
 
     const url = `${API_URL}/products${params.toString() ? `?${params.toString()}` : ""}`
-    return await fetcher<IProduct[]>(url)
+    const products = await fetcher<IProduct[]>(url)
+    if (!Array.isArray(products)) {
+        console.warn("getAllProducts: La respuesta no es un array:", products)
+        return []
+    }
+    return products
 }
