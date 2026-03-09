@@ -7,7 +7,14 @@ import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
  * GET /purchase-orders
  */
 export const getAllPurchaseOrders = async (): Promise<IPurchaseOrder[]> => {
-    const orders = await fetcher<IPurchaseOrder[]>(`${API_URL}/purchase-orders`)
+    let orders: IPurchaseOrder[] = []
+    try {
+        orders = await fetcher<IPurchaseOrder[]>(`${API_URL}/purchase-orders`)
+    } catch (error) {
+        console.warn("getAllPurchaseOrders: Error fetching orders:", error)
+        return []
+    }
+
     if (!Array.isArray(orders)) {
         console.warn("getAllPurchaseOrders: La respuesta no es un array:", orders)
         return []

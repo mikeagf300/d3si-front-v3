@@ -31,6 +31,23 @@ export const fetcher = async <T>(url: string, options: RequestInit = {}): Promis
         next: { revalidate: 0 },
     })
 
-    const data = await response.json()
-    return data
+    let data
+    try {
+        data = await response.json()
+    } catch (e) {
+        if (!response.ok) {
+            throw new Error(`Error en la petición: status ${response.status}`)
+        }
+        return null as unknown as T
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || data?.error || `Error en la petición HTTP: status ${response.status}`)
+    }
+
+    if (data && typeof data === "object" && "statusCode" in data && "data" in data) {
+        return data.data as T
+    }
+
+    return data as T
 }

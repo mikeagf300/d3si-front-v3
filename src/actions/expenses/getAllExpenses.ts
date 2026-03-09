@@ -7,5 +7,11 @@ import { IExpense } from "@/interfaces/expenses/IExpense"
  * GET /expenses
  */
 export const getAllExpenses = async (): Promise<IExpense[]> => {
-    return await fetcher<IExpense[]>(`${API_URL}/expenses`)
+    try {
+        const expenses = await fetcher<IExpense[]>(`${API_URL}/expenses`)
+        return Array.isArray(expenses) ? expenses : []
+    } catch (error) {
+        console.warn("getAllExpenses: Error fetching expenses:", error)
+        return []
+    }
 }

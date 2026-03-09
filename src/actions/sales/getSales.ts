@@ -15,7 +15,13 @@ export const getSales = async (storeID?: string, date?: string): Promise<ISaleRe
         url += `?${params.toString()}`
     }
 
-    const sales = await fetcher<ISaleResponse[]>(url)
+    let sales: ISaleResponse[] = []
+    try {
+        sales = await fetcher<ISaleResponse[]>(url)
+    } catch (error) {
+        console.warn("getSales: Error al obtener las ventas:", error)
+        return []
+    }
 
     // Validamos que sales sea un array para evitar el error "sales.map is not a function"
     if (!Array.isArray(sales)) {
