@@ -6,7 +6,7 @@ import { IUser } from "@/interfaces/users/IUser"
 type AuthResponse = {
     message?: string
     user: IUser
-    token: string
+    accessToken: string
 }
 
 type ErrorMessage = {

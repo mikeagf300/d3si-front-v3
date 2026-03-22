@@ -40,7 +40,12 @@ const HomePage = async ({ searchParams }: SearchParams) => {
 
     if (!storeID) return null
 
-    const allStores = await getAllStores()
+    let allStores: Awaited<ReturnType<typeof getAllStores>> = []
+    try {
+        allStores = await getAllStores()
+    } catch (error) {
+        console.warn("HomePage: No se pudieron obtener las tiendas:", error)
+    }
     const isSpecialFilter = ["all", "propias", "consignadas"].includes(storeID)
 
     // Determinar qué tienda usar para los gráficos (por defecto la primera si es un filtro especial)
@@ -51,7 +56,10 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const [sales, wooOrders, resume, allOrders, allProducts] = await Promise.all([
         getSales(apiSalesStoreID || "", yyyyDate),
         getWooCommerceOrders(newDate),
-        getResume(chartStoreID || "", yyyyDate),
+        getResume(chartStoreID || "", yyyyDate).catch((err) => {
+            console.warn("HomePage: No se pudo obtener el resumen (getResume):", err.message)
+            return null
+        }),
         getAllPurchaseOrders(),
         getAllProducts(),
     ])
@@ -165,7 +173,7 @@ const HomePage = async ({ searchParams }: SearchParams) => {
                 <div className="flex flex-col sm:flex-row flex-wrap item-center sm:items-start justify-between gap-2">
                     {/* <SellButton /> */}
                     <FilterControls />
-                    <ResumeDebitCreditPayment resume={resume} />
+                    <ResumeDebitCreditPayment resume={resume ?? undefined} />
                 </div>
 
                 {/* Resúmenes y gráfico */}
@@ -178,8 +186,8 @@ const HomePage = async ({ searchParams }: SearchParams) => {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="block space-y-6 sm:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4 xl:gap-4 lg:items-start">
-                                <ResumeLeftSideChart resume={resume} />
-                                <TotalSalesResumeGraph resume={resume} />
+                                <ResumeLeftSideChart resume={resume ?? undefined} />
+                                <TotalSalesResumeGraph resume={resume ?? undefined} />
                                 <ResumeRightSideChart sales={allSalesResume} />
                             </AccordionContent>
                         </AccordionItem>

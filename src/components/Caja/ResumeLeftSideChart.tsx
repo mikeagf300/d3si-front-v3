@@ -6,8 +6,11 @@ import { useAuth } from "@/stores/user.store"
 import { useTienda } from "@/stores/tienda.store"
 import { Role } from "@/lib/userRoles"
 
-export default function ResumeLeftSideChart({ resume }: { resume: IResume }) {
-    const { orders, sales } = resume.totales
+export default function ResumeLeftSideChart({ resume }: { resume?: IResume }) {
+    const { orders, sales } = resume?.totales ?? {
+        orders: { month: { count: 0, amount: 0 } },
+        sales: { month: { total: { amount: 0, count: 0 } } },
+    }
     const { user } = useAuth()
     const { storeSelected } = useTienda()
 

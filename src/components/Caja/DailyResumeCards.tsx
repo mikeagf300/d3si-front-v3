@@ -5,7 +5,7 @@ import { IResume } from "@/interfaces/sales/ISalesResume"
 import { toPrice } from "@/utils/priceFormat"
 import { CreditCard, HandCoins } from "lucide-react"
 
-export default function DailyResumeCards({ resume }: { resume: IResume }) {
+export default function DailyResumeCards({ resume }: { resume?: IResume }) {
     // Si no hay datos de ventas hoy, usamos valores en 0 por defecto
     const todaySales = resume?.totales?.sales?.today || {
         total: { count: 0, amount: 0 },

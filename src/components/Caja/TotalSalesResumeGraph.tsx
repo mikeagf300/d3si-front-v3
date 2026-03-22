@@ -12,7 +12,7 @@ import { useAuth } from "@/stores/user.store"
 import { useTienda } from "@/stores/tienda.store"
 import { Role } from "@/lib/userRoles"
 
-export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
+export default function TotalSalesResumeGraph({ resume }: { resume?: IResume }) {
     const [editingMeta, setEditingMeta] = useState(false)
     const [metaInput, setMetaInput] = useState("")
     const route = useRouter()
@@ -47,7 +47,10 @@ export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
     }
 
     const getSalesAmount = (): number => {
-        const { orders, sales } = resume.totales
+        const { orders, sales } = resume?.totales ?? {
+            orders: { month: { count: 0, amount: 0 } },
+            sales: { month: { total: { amount: 0, count: 0 } } },
+        }
         const totalSaleAndOrderMonth = orders.month.amount + sales.month.total.amount
         return totalSaleAndOrderMonth
     }
@@ -71,10 +74,10 @@ export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
                     percentage >= 100
                         ? "#10b981"
                         : percentage >= 75
-                        ? "#0ea5e9"
-                        : percentage >= 50
-                        ? "#f59e0b"
-                        : "#ef4444",
+                          ? "#0ea5e9"
+                          : percentage >= 50
+                            ? "#f59e0b"
+                            : "#ef4444",
             },
         ]
     }

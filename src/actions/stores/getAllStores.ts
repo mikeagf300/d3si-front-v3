@@ -7,6 +7,6 @@ import { fetcher } from "@/lib/fetcher"
  *
  * @returns {Promise<IStore[]>} - Promesa que resuelve con un array de objetos `IStore`.
  */
-export const getAllStores = async (): Promise<IStore[]> => {
-    return await fetcher<IStore[]>(`${API_URL}/stores`)
+export const getAllStores = async (options?: RequestInit): Promise<IStore[]> => {
+    return await fetcher<IStore[]>(`${API_URL}/stores`, options)
 }

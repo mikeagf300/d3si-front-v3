@@ -34,23 +34,35 @@ export default function LoginForm() {
             }
 
             // Guarda el usuario y el token en Zustand
-            setUser(data.user, data.token)
+            setUser(data.user, data.accessToken)
+
+            // Guardar también en cookies para que el SSR (Server Components) pueda leerlo
+            document.cookie = `auth_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`
 
             // 2. Cargar y guardar usuarios y tiendas
-            const [usuarios, tiendas] = await Promise.all([getAllUsers(), getAllStores()])
+            const options = { headers: { Authorization: `Bearer ${data.accessToken}` } }
+            const [usuarios, tiendas] = await Promise.all([getAllUsers(options), getAllStores(options)])
 
             setUsers(usuarios)
             setStores(tiendas)
 
-            const storesFromUser = tiendas.filter((t) => t.Users.some((u) => u.userID === data.user.userID))
+            const storesFromUser = tiendas.filter((t) => (t.Users || []).some((u) => u.userID === data.user.userID))
             setStoresUser(storesFromUser)
-            setStoreSelected(storesFromUser[0])
-            const storeID = storesFromUser[0].storeID
-            toast.success("Inicio de sesión exitoso")
-            if (data.user.role === Role.Consignado || data.user.role === Role.Tercero) {
-                return router.push(`/home/purchaseOrder?storeID=${storeID}`)
+
+            if (storesFromUser.length > 0) {
+                setStoreSelected(storesFromUser[0])
+                const storeID = storesFromUser[0].storeID
+                toast.success("Inicio de sesión exitoso")
+                if (data.user.role === Role.Consignado || data.user.role === Role.Tercero) {
+                    return router.push(`/home/purchaseOrder?storeID=${storeID}`)
+                }
+                router.push(`/home?storeID=${storeID}`)
+            } else {
+                // Fallback si el usuario no tiene tiendas asignadas directamente o faltan datos
+                toast.success("Inicio de sesión exitoso, verificando tiendas...")
+                // Usamos "all" como default para que cargue la vista global si no hay tienda específica
+                router.push(`/home?storeID=all`)
             }
-            router.push(`/home?storeID=${storeID}`)
         } catch (err) {
             console.error(err)
             toast.error("Error inesperado al iniciar sesión")
