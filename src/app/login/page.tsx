@@ -18,7 +18,7 @@ export default function LoginPage() {
             toast("Sesión guardada, redirgiendo...")
             router.push(`/home?storeID=${storeSelected.storeID}`)
         }
-    }, [user, storeSelected])
+    }, [user, storeSelected, router])
 
     const handleClearStorage = () => {
         localStorage.clear()
@@ -28,12 +28,6 @@ export default function LoginPage() {
 
     return (
         <main className=" flex flex-col items-center justify-center px-4">
-            <button
-                onClick={handleClearStorage}
-                className="absolute top-4 right-4 text-xs bg-red-500 text-white px-3 py-1 rounded"
-            >
-                Limpiar datos locales (Si está trabado)
-            </button>
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}

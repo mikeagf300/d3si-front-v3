@@ -175,7 +175,7 @@ export function applyColumnFilters(products: any[], filters: any) {
         if (filters.producto.trim()) {
             const searchTerm = filters.producto.toLowerCase()
             const nameMatch = product.name.toLowerCase().includes(searchTerm)
-            const skuMatch = product.ProductVariations.some((v: any) => v.sku === searchTerm)
+            const skuMatch = (product.ProductVariations || []).some((v: any) => v.sku === searchTerm)
             const genreMatch = product.genre?.toLowerCase().includes(searchTerm)
 
             if (!(nameMatch || skuMatch || genreMatch)) return false
@@ -198,12 +198,11 @@ export function applyColumnFilters(products: any[], filters: any) {
 
     // Calcular el stock total de los productos filtrados
     const totalStock = filteredProducts.reduce((sum, product) => {
-        return (
-            sum +
-            product.ProductVariations.reduce((varSum: number, variation: any) => {
-                return varSum + (variation.stockQuantity || 0)
-            }, 0)
-        )
+        const variationSum = (product.ProductVariations || []).reduce((varSum: number, variation: any) => {
+            return varSum + (variation.stockQuantity || 0)
+        }, 0)
+
+        return sum + variationSum
     }, 0)
 
     return {

@@ -57,9 +57,9 @@ export default function PurchaseOrderClient({
         if (user?.role === "admin" && !storeSelected?.storeID) return filteredAndSortedProducts
         if (user?.role === "store_manager" && storeSelected?.storeID) {
             return filteredAndSortedProducts.filter((product) =>
-                product.ProductVariations.some((variation) =>
-                    variation?.StoreProducts?.some((storeProduct) => storeProduct.storeID === storeSelected.storeID)
-                )
+                (product.ProductVariations || []).some((variation) =>
+                    variation?.StoreProducts?.some((storeProduct) => storeProduct.storeID === storeSelected.storeID),
+                ),
             )
         }
         return filteredAndSortedProducts
@@ -72,7 +72,7 @@ export default function PurchaseOrderClient({
         return filteredByStore.filter(
             (product) =>
                 product.name.toLowerCase().includes(lower) ||
-                product.ProductVariations.some((v) => v.sku?.toLowerCase().includes(lower))
+                (product.ProductVariations || []).some((v) => v.sku?.toLowerCase().includes(lower)),
         )
     }, [search, filteredByStore])
 
@@ -84,18 +84,14 @@ export default function PurchaseOrderClient({
 
         // se ordena aquí por ahora.
         const productsToPaginate = [...searchedProducts].sort((a, b) => {
-            const totalA = a.ProductVariations.reduce((sum, v) => {
-                return sum + v.stockQuantity
-            }, 0)
-            const totalB = b.ProductVariations.reduce((sum, v) => {
-                return sum + v.stockQuantity
-            }, 0)
+            const totalA = (a.ProductVariations || []).reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0)
+            const totalB = (b.ProductVariations || []).reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0)
             return totalB - totalA
         })
 
         for (const product of productsToPaginate) {
             // Ordenar las variaciones por talla (no por stock como estaba antes)
-            const sortedVariations: IVariationWithQuantity[] = [...product.ProductVariations]
+            const sortedVariations: IVariationWithQuantity[] = [...(product.ProductVariations || [])]
                 .sort((a, b) => a.sizeNumber.localeCompare(b.sizeNumber))
                 .map((v) => ({ quantity: 0, ...v }))
 
@@ -161,7 +157,7 @@ export default function PurchaseOrderClient({
             // Buscar el producto en la lista inicial para asegurar que lo encontramos
             let found = false
             for (const product of initialProducts) {
-                for (const variation of product.ProductVariations) {
+                for (const variation of product.ProductVariations || []) {
                     if (variation.sku === sku) {
                         const findQuantity =
                             pedido.find((p) => p.variation.variationID === variation.variationID)?.variation.quantity ||

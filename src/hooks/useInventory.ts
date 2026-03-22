@@ -22,15 +22,15 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
     const filteredInitialProducts = useMemo(() => {
         if (user?.role === Role.Admin || user?.role === Role.Tercero || !userStoreID) return initialProducts
         return initialProducts.filter((product) =>
-            product.ProductVariations.some((variation) =>
-                variation.StoreProducts?.some((sp) => sp.storeID === userStoreID)
-            )
+            (product.ProductVariations || []).some((variation) =>
+                variation.StoreProducts?.some((sp) => sp.storeID === userStoreID),
+            ),
         )
     }, [initialProducts, user?.role, userStoreID])
 
     useEffect(() => {
         setRawProducts(initialProducts)
-    }, [setRawProducts])
+    }, [initialProducts, setRawProducts])
 
     const adminStoreIDs = useMemo(() => stores.filter((s) => s.isAdminStore).map((s) => s.storeID), [stores])
 
@@ -44,12 +44,12 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
     const flattenedProducts = useMemo<FlattenedItem[]>(() => {
         const flattened: FlattenedItem[] = []
         filteredProducts.forEach((product) => {
-            const totalStockQuantity = product.ProductVariations.reduce(
-                (total: any, v: { stockQuantity: any }) => total + v.stockQuantity,
-                0
+            const totalStockQuantity = (product.ProductVariations || []).reduce(
+                (total: number, v: { stockQuantity?: number }) => total + (v.stockQuantity || 0),
+                0,
             )
-            const variationCount = product.ProductVariations.length
-            product.ProductVariations.forEach((variation: any, index: number) => {
+            const variationCount = (product.ProductVariations || []).length
+            ;(product.ProductVariations || []).forEach((variation: any, index: number) => {
                 flattened.push({
                     product,
                     variation,
@@ -70,14 +70,17 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
         let currentVariationCount = 0
 
         // Se agrupan productos por ID
-        const groupedProducts = flattenedProducts.reduce((groups, item) => {
-            const productId = item.product.productID
-            if (!groups[productId]) {
-                groups[productId] = []
-            }
-            groups[productId].push(item)
-            return groups
-        }, {} as Record<string, FlattenedItem[]>)
+        const groupedProducts = flattenedProducts.reduce(
+            (groups, item) => {
+                const productId = item.product.productID
+                if (!groups[productId]) {
+                    groups[productId] = []
+                }
+                groups[productId].push(item)
+                return groups
+            },
+            {} as Record<string, FlattenedItem[]>,
+        )
 
         // Iterar sobre los grupos de productos
         for (const productGroup of Object.values(groupedProducts)) {
@@ -121,19 +124,17 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
 
     const totalStockShown = useMemo(() => {
         if (user?.role === Role.Admin || user?.role === Role.Tercero) {
-            return rawProducts.reduce(
-                (total, product) => total + product.ProductVariations.reduce((sum, v) => sum + v.stockQuantity, 0),
-                0
-            )
+            return rawProducts.reduce((total, product) => {
+                const inner = (product.ProductVariations || []).reduce((sum, v: any) => sum + (v.stockQuantity || 0), 0)
+                return total + inner
+            }, 0)
         } else if (user?.role === Role.Vendedor && userStoreID) {
             return rawProducts.reduce((total, product) => {
-                return (
-                    total +
-                    product.ProductVariations.reduce((sum, v) => {
-                        const storeProduct = v.StoreProducts?.find((sp) => sp.storeID === userStoreID)
-                        return sum + (storeProduct ? storeProduct.quantity : 0)
-                    }, 0)
-                )
+                const inner = (product.ProductVariations || []).reduce((sum: number, v: any) => {
+                    const storeProduct = v.StoreProducts?.find((sp: any) => sp.storeID === userStoreID)
+                    return sum + (storeProduct ? storeProduct.quantity : 0)
+                }, 0)
+                return total + inner
             }, 0)
         } else {
             return 0

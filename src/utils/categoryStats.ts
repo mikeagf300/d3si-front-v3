@@ -68,10 +68,11 @@ export const calculateTypeStats = (products: IProduct[]): Map<string, ITypeStats
             stats.set(type, entry)
         }
         entry.productCount += 1
-        for (const variation of product.ProductVariations) {
-            entry.totalCost += +variation.priceCost * variation.stockQuantity
-            entry.totalRevenue += +variation.priceList * variation.stockQuantity
-            entry.count += variation.stockQuantity
+        for (const variation of product.ProductVariations || []) {
+            const qty = variation.stockQuantity || 0
+            entry.totalCost += Number(variation.priceCost) * qty
+            entry.totalRevenue += Number(variation.priceList) * qty
+            entry.count += qty
         }
     }
     return stats
@@ -129,7 +130,7 @@ export const calculateCategoryStats = (products: IProduct[], categories: ICatego
         if (stats) {
             stats.productCount += 1
             // Contar stock real y calcular costos basados en stock
-            for (const v of product.ProductVariations) {
+            for (const v of product.ProductVariations || []) {
                 const stockQuantity = v.stockQuantity || 0
                 stats.count += stockQuantity
                 stats.totalCost += Number(v.priceCost) * stockQuantity
@@ -168,7 +169,7 @@ export const calculateCategoryStats = (products: IProduct[], categories: ICatego
  */
 export const calculateSubcategoryStats = (
     selectedCategoryId: string | null,
-    allStats: Map<string, ICategoryStats>
+    allStats: Map<string, ICategoryStats>,
 ): ICategoryStats[] => {
     if (!selectedCategoryId) return []
     const parent = allStats.get(selectedCategoryId)
@@ -183,7 +184,7 @@ export const calculateSubcategoryStats = (
 export const generatePieData = (
     viewMode: ViewMode,
     typeStats: Map<string, ITypeStats>,
-    categoryStats: ICategoryStats[]
+    categoryStats: ICategoryStats[],
 ): any[] => {
     if (viewMode === "tipo") {
         return Array.from(typeStats.entries())
