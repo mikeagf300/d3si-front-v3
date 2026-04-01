@@ -1,6 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { fetcher } from "@/lib/fetcher"
+import { API_URL } from "@/lib/enviroments"
 import { CreateProductFormData } from "@/interfaces/products/ICreateProductForm"
 
 interface MassiveCreateProductData {
@@ -9,28 +11,26 @@ interface MassiveCreateProductData {
 
 export const createMassiveProducts = async (data: MassiveCreateProductData) => {
     try {
-        // Convertir priceList y priceCost a string en cada size
-        const productsWithStringPrices = data.products.map((product) => ({
-            ...product,
-            sizes: product.sizes.map((size) => ({
-                ...size,
-                priceList: String(size.priceList),
-                priceCost: String(size.priceCost),
-            })),
-        }))
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/crear-masivo`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ products: productsWithStringPrices }),
-        })
-
-        if (!res.ok) {
-            return {
-                success: false,
-                error: `Error del servidor: ${res.status} ${res.statusText}`,
+        for (const product of data.products) {
+            const body = {
+                name: product.name,
+                image: product.image,
+                categoryID: product.categoryID,
+                brand: product.brand,
+                genre: product.genre,
+                variations: product.sizes.map((size) => ({
+                    sku: size.sku,
+                    priceCost: size.priceCost,
+                    priceList: size.priceList,
+                    stock: size.stockQuantity,
+                    size: size.sizeNumber,
+                })),
             }
+
+            await fetcher(`${API_URL}/products`, {
+                method: "POST",
+                body: JSON.stringify(body),
+            })
         }
 
         revalidatePath("/inventory")
