@@ -60,7 +60,7 @@ export default function Sidebar() {
         if (user.role === Role.Vendedor) {
             return navItems.filter(
                 (item) =>
-                    item.label !== "UTI" && item.label !== "Estado de Resultados" && item.label !== "Control de Mando"
+                    item.label !== "UTI" && item.label !== "Estado de Resultados" && item.label !== "Control de Mando",
             )
         } else if (user.role === Role.Consignado) {
             return navItems.filter(
@@ -69,7 +69,7 @@ export default function Sidebar() {
                     item.label !== "Inventario" &&
                     item.label !== "UTI" &&
                     item.label !== "Control de Mando" &&
-                    item.label !== "Estado de Resultados"
+                    item.label !== "Estado de Resultados",
             )
         } else if (user.role === Role.Tercero) {
             const mutatedNavItems = navItems.map((item) => {
@@ -77,7 +77,7 @@ export default function Sidebar() {
                     return {
                         ...item,
                         subItems: item.subItems.map((sub) =>
-                            sub.label === "Crear OC" ? { ...sub, label: "Comprar" } : sub
+                            sub.label === "Crear OC" ? { ...sub, label: "Comprar" } : sub,
                         ),
                     }
                 }
@@ -140,12 +140,16 @@ export default function Sidebar() {
                                             src="/brand/two-brands-color.png"
                                             alt="Logo Light"
                                             fill
+                                            priority
+                                            sizes="(max-width: 1024px) 160px, 200px"
                                             className="block dark:hidden object-contain"
                                         />
                                         <Image
                                             src="/brand/two-brands.png"
                                             alt="Logo Dark"
                                             fill
+                                            priority
+                                            sizes="(max-width: 1024px) 160px, 200px"
                                             className="hidden dark:block object-contain"
                                         />
                                     </div>
@@ -272,8 +276,8 @@ export default function Sidebar() {
                                                                             ? "bg-sky-700 text-white shadow-lg justify-center"
                                                                             : "bg-sky-700 text-white shadow-lg border-r-4 border-sky-300 transform scale-105"
                                                                         : shouldShowCollapsed
-                                                                        ? "justify-center dark:hover:bg-gray-800 hover:bg-sky-700 hover:text-white hover:shadow-md"
-                                                                        : "dark:hover:bg-gray-800 hover:bg-sky-700 hover:text-white hover:shadow-md hover:transform hover:scale-105"
+                                                                          ? "justify-center dark:hover:bg-gray-800 hover:bg-sky-700 hover:text-white hover:shadow-md"
+                                                                          : "dark:hover:bg-gray-800 hover:bg-sky-700 hover:text-white hover:shadow-md hover:transform hover:scale-105"
                                                                 }
                                                             `}
                                                             >

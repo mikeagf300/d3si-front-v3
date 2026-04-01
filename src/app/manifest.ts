@@ -4,8 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
     return {
         name: "D3SI - App",
         short_name: "Sistema de Ventas",
-        start_url: "https://desiapp-new.vercel.app/",
-        scope: "https://desiapp-new.vercel.app/",
+        start_url: "/",
+        scope: "/",
         description: "D3SI - Sistema gestión de Ventas",
         theme_color: "#2d51e1",
         background_color: "#2EC6FE",

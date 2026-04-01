@@ -21,6 +21,7 @@ import { ChartBarIcon } from "lucide-react"
 import { SaleForm } from "@/components/CreateSale/SaleForm"
 import { getAllProducts } from "@/actions/products/getAllProducts"
 import { getAllStores } from "@/actions/stores/getAllStores"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -38,7 +39,16 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const newDate = day ? new Date(year, month - 1, day) : new Date(now.getTime() - 3 * 60 * 60 * 1000)
     const yyyyDate = formatDateToYYYYMMDD(newDate)
 
-    if (!storeID) return null
+    if (!storeID) {
+        let stores: Awaited<ReturnType<typeof getAllStores>> = []
+        try {
+            stores = await getAllStores()
+        } catch {}
+        if (stores.length > 0) {
+            redirect(`/home?storeID=${stores[0].storeID}`)
+        }
+        return null
+    }
 
     let allStores: Awaited<ReturnType<typeof getAllStores>> = []
     try {
