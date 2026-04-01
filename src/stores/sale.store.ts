@@ -42,7 +42,9 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     actions: {
         addProduct: (product, variation, storeProduct, finalPrice, activeOffer) => {
             const { storeSelected } = useTienda.getState()
-            if (!storeSelected) {
+            // `storeSelected` puede ser null (hidración / fast refresh). Si el `storeProduct` ya trae
+            // `storeID` (viene desde URL o desde la variación), permitimos agregar al carrito igual.
+            if (!storeSelected && !storeProduct?.storeID) {
                 toast.error("Debes elegir una tienda")
                 return
             }

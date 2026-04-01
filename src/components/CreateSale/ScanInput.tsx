@@ -8,6 +8,7 @@ import { IVariationWithQuantity } from "@/interfaces/orders/IOrder"
 import { useTienda } from "@/stores/tienda.store"
 import { toast } from "sonner"
 import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
+import { useSearchParams } from "next/navigation"
 
 interface Props {
     initialProducts: IProduct[]
@@ -15,8 +16,19 @@ interface Props {
 
 export const ScanInput = ({ initialProducts }: Props) => {
     const { addProduct, updateQuantity } = useSaleStore((state) => state.actions)
-    const { storeSelected } = useTienda()
+    const { storeSelected, stores } = useTienda()
+    const searchParams = useSearchParams()
     const [productInput, setProductCode] = useState("")
+
+    // Use storeID directly — Zustand may not have the full store object
+    const effectiveStoreID = storeSelected?.storeID ?? searchParams.get("storeID") ?? ""
+
+    // Resolve the full store object when available (for fallback StoreProduct creation)
+    const effectiveStore = useMemo(() => {
+        if (storeSelected) return storeSelected
+        if (!effectiveStoreID) return null
+        return stores.find((s) => s.storeID === effectiveStoreID) ?? null
+    }, [storeSelected, stores, effectiveStoreID])
 
     const parentProductFinded = useMemo(() => {
         const inputTokens = productInput.toLowerCase().trim().split(/\s+/)
@@ -50,7 +62,7 @@ export const ScanInput = ({ initialProducts }: Props) => {
                         quantity: 1,
                     }
                     const storeProduct = variationFinded.StoreProducts?.find(
-                        (p) => p.storeID === storeSelected?.storeID && p.variationID === variationFinded.variationID,
+                        (p) => p.storeID === effectiveStoreID && p.variationID === variationFinded.variationID,
                     )
                     if (storeProduct) {
                         const storeQty: IVariationWithQuantity = {
@@ -68,7 +80,7 @@ export const ScanInput = ({ initialProducts }: Props) => {
 
                         setProductCode("")
                     } else {
-                        if (!storeSelected) {
+                        if (!effectiveStoreID) {
                             toast.error("No hay tienda seleccionada")
                             return
                         }
@@ -76,8 +88,8 @@ export const ScanInput = ({ initialProducts }: Props) => {
                             createdAt: variationFinded.createdAt,
                             priceCostStore: variationFinded.priceCost.toString(),
                             quantity: 0,
-                            Store: storeSelected,
-                            storeID: storeSelected.storeID,
+                            Store: effectiveStore ?? ({ storeID: effectiveStoreID } as any),
+                            storeID: effectiveStoreID,
                             storeProductID: "",
                             updatedAt: variationFinded.updatedAt,
                             variationID: variationFinded.variationID,
@@ -118,15 +130,14 @@ export const ScanInput = ({ initialProducts }: Props) => {
                                     createdAt: variation.createdAt,
                                     priceCostStore: variation.priceCost.toString(),
                                     quantity: 0,
-                                    Store: storeSelected!,
-                                    storeID: storeSelected!.storeID,
+                                    Store: effectiveStore ?? ({ storeID: effectiveStoreID } as any),
+                                    storeID: effectiveStoreID,
                                     storeProductID: "",
                                     updatedAt: variation.updatedAt,
                                     variationID: variation.variationID,
                                 }
                                 const storeProductf = variation.StoreProducts?.find(
-                                    (p) =>
-                                        p.storeID === storeSelected!.storeID && p.variationID === variation.variationID,
+                                    (p) => p.storeID === effectiveStoreID && p.variationID === variation.variationID,
                                 )
                                 let variationWithQuantity: IVariationWithQuantity = { ...variation, quantity: 1 }
                                 if (storeProductf) {
