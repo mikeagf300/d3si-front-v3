@@ -80,11 +80,11 @@ const HomePage = async ({ searchParams }: SearchParams) => {
         if (storeID === "all") return true
         if (storeID === "propias") {
             const store = allStores.find((s) => s.storeID === sale.storeID)
-            return store?.isAdminStore === true
+            return store?.isCentralStore === true
         }
         if (storeID === "consignadas") {
             const store = allStores.find((s) => s.storeID === sale.storeID)
-            return store?.isAdminStore === false
+            return store?.isCentralStore === false
         }
         return sale.storeID === storeID
     })
@@ -97,8 +97,8 @@ const HomePage = async ({ searchParams }: SearchParams) => {
         .filter((order) => {
             if (storeID === "all") return true
             const store = allStores.find((s) => s.storeID === order.storeID)
-            if (storeID === "propias") return store?.isAdminStore === true
-            if (storeID === "consignadas") return store?.isAdminStore === false
+            if (storeID === "propias") return store?.isCentralStore === true
+            if (storeID === "consignadas") return store?.isCentralStore === false
             return order.storeID === storeID
         })
         .map((order) => ({ ...order, isOrder: true }))
@@ -182,7 +182,7 @@ const HomePage = async ({ searchParams }: SearchParams) => {
 
                 <div className="flex flex-col sm:flex-row flex-wrap item-center sm:items-start justify-between gap-2">
                     {/* <SellButton /> */}
-                    <FilterControls />
+                    <FilterControls stores={allStores} />
                     <ResumeDebitCreditPayment resume={resume ?? undefined} />
                 </div>
 

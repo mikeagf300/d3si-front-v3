@@ -10,12 +10,15 @@ export interface IStore {
     phone: string
     address: string
     city: string
-    markup: string
-    isAdminStore: boolean
-    role: string
     email: string
+    type?: string
+    isCentralStore?: boolean
+    /** @deprecated use isCentralStore */
+    isAdminStore?: boolean
+    markup?: string
+    role?: string
     createdAt: string
     updatedAt: string
-    StoreProduct: IStoreProduct
-    Users: IUser[]
+    StoreProduct?: IStoreProduct
+    Users?: IUser[]
 }
