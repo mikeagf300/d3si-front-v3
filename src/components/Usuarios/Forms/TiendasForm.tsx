@@ -29,7 +29,7 @@ export default function TiendasForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        const gestor = users.find((u: IUser) => u.name === gestorTienda)
+        const gestor = users.find((u: IUser) => u.userID === gestorTienda)
 
         if (!gestor) {
             toast.error("Gestor no encontrado")
@@ -267,7 +267,7 @@ export default function TiendasForm() {
                             </SelectTrigger>
                             <SelectContent>
                                 {users.map((u: IUser) => (
-                                    <SelectItem key={u.userID} value={u.name}>
+                                    <SelectItem key={u.userID} value={u.userID}>
                                         {u.name}
                                     </SelectItem>
                                 ))}
