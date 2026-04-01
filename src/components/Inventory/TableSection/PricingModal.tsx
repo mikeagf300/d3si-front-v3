@@ -283,7 +283,7 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                                         </div>
                                         {priceCheck.activeOffer?.description && (
                                             <p className="mt-2 text-xs text-orange-700 dark:text-orange-300 italic">
-                                                "{priceCheck.activeOffer.description}"
+                                                &quot;{priceCheck.activeOffer.description}&quot;
                                             </p>
                                         )}
                                         {priceCheck.activeOffer && (
@@ -379,7 +379,9 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                                                 </Badge>
                                                 <span className="text-xs text-gray-400">{formatDate(h.createdAt)}</span>
                                             </div>
-                                            {h.reason && <p className="text-xs text-gray-500 italic">"{h.reason}"</p>}
+                                            {h.reason && (
+                                                <p className="text-xs text-gray-500 italic">&quot;{h.reason}&quot;</p>
+                                            )}
                                             {h.changedBy && <p className="text-xs text-gray-400">Por: {h.changedBy}</p>}
                                         </div>
                                         <div className="flex items-center gap-2 text-right">

@@ -66,7 +66,9 @@ export interface ISaleResponse {
 export interface IsaleProductReturned {
     returnItemID: string
     returnID: string
-    storeProductID: string
+    storeProductID?: string
+    saleProductID?: string
+    variationID?: string
     returnedQuantity: number
     unitPrice: string
     createdAt: string
@@ -89,7 +91,9 @@ export interface ISaleReturn {
 
 export type ISendSaleReturn = Omit<ISaleReturn, "returnID" | "createdAt" | "updatedAt" | "User" | "saleID"> & {
     returnedProducts?: {
-        storeProductID: string
+        storeProductID?: string
+        saleProductID?: string
+        variationID?: string
         quantity: number
     }[]
 }

@@ -60,7 +60,7 @@ export const salesToResume = (sales: ISaleResponse[], ref: Date): ISalesResume =
         if (sale.status !== "Pagado" && sale.status !== "Anulado") continue
 
         const nulledProducts = getAnulatedProducts(sale)
-        const totalNulledAmount = nulledProducts.reduce((acc, p) => acc + p.quantitySold * p.unitPrice, 0)
+        const totalNulledAmount = nulledProducts.reduce((acc, p) => acc + p.quantitySold * Number(p.unitPrice), 0)
         const amount = sale.total - totalNulledAmount
 
         // Si el monto resultante es 0 o menor, no la contamos (anulación total)

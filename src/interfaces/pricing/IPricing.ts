@@ -45,7 +45,7 @@ export interface ICreateOfferPayload {
     isActive: boolean
 }
 
-export interface IUpdateOfferPayload extends Partial<ICreateOfferPayload> {}
+export type IUpdateOfferPayload = Partial<ICreateOfferPayload>
 
 export interface IOffer {
     offerID: string

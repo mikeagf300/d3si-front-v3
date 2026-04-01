@@ -61,7 +61,7 @@ export const getSales = async (storeID?: string, date?: string): Promise<ISaleRe
         sales.map(async (sale) => {
             if (sale.status === "Anulado" && !sale.Return) {
                 try {
-                    return await getSingleSale(sale.saleID)
+                    return await getSingleSale(sale.saleID, sale.storeID)
                 } catch (error) {
                     console.error(`Error fetching details for sale ${sale.saleID}:`, error)
                     return normalizeSale(sale)
@@ -78,6 +78,10 @@ export const getSales = async (storeID?: string, date?: string): Promise<ISaleRe
  * Obtiene el detalle de una venta específica por su ID.
  * GET /sales/:id
  */
-export const getSingleSale = async (saleID: string) => {
-    return await fetcher<ISaleResponse>(`${API_URL}/sales/${saleID}`)
+export const getSingleSale = async (saleID: string, storeID?: string): Promise<ISaleResponse> => {
+    const params = new URLSearchParams()
+    if (storeID) params.set("storeID", storeID)
+    const url = `${API_URL}/sales/${saleID}${params.toString() ? `?${params.toString()}` : ""}`
+    const raw = await fetcher<RawSale>(url)
+    return normalizeSale(raw)
 }

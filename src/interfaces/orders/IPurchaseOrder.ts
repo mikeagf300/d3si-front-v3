@@ -1,6 +1,7 @@
 import { IStore } from "../stores/IStore"
 import { IProductVariation } from "../products/IProductVariation"
 import { IProduct } from "../products/IProduct"
+import { ICategory } from "../categories/ICategory"
 
 export type PurchaseOrderStatus = "Pendiente" | "Pagado" | "Cancelado" | "Enviado" | "Recibido"
 
@@ -15,7 +16,6 @@ export interface IPurchaseOrderItemReceived {
     quantityReceived: number
     unitPrice: number
 }
-
 
 export interface ICreatePurchaseOrder {
     storeID: string
@@ -51,4 +51,10 @@ export interface IPurchaseOrder {
     updatedAt: string
     Store?: IStore
     PurchaseOrderItems?: (IPurchaseOrderItem & { variation: IProductVariation & { Product: IProduct } })[]
+}
+
+export interface PurchaseOrderClientProps {
+    initialProducts: IProduct[]
+    initialCategories: ICategory[]
+    initialStores: IStore[]
 }

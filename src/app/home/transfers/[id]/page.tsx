@@ -2,8 +2,8 @@ import { getTransferById } from "@/actions/transfers/getTransferById"
 import { getAllProducts } from "@/actions/products/getAllProducts"
 import TransferDetailWrapper from "@/components/Transfers/TransferDetailWrapper"
 
-export default async function TransferDetailPage({ params }: { params: { id: string } }) {
-    const { id } = params
+export default async function TransferDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
 
     // El id viene del servidor
     const [transfer, products] = await Promise.all([getTransferById(id), getAllProducts()])

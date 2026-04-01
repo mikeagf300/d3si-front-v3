@@ -7,7 +7,9 @@ export interface AnularSale {
     nullNote: ISendSaleReturn
     // Opcional: información del producto específico a devolver/anular
     productToReturn?: {
-        storeProductID: string
+        storeProductID?: string
+        saleProductID?: string
+        variationID?: string
         quantity: number
     }
 }
