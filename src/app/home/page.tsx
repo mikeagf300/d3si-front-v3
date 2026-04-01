@@ -36,8 +36,13 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const { storeID = "", date = "" } = await searchParams
     const [year, month, day] = date.split("-").map(Number)
     const now = new Date()
-    const newDate = day ? new Date(year, month - 1, day) : new Date(now.getTime() - 3 * 60 * 60 * 1000)
-    const yyyyDate = formatDateToYYYYMMDD(newDate)
+    // Date.UTC garantiza mediodía UTC independiente del timezone del servidor.
+    // Mediodía UTC = 09:00 Chile (UTC-3) → siempre cae en el día correcto.
+    const newDate = day
+        ? new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
+        : new Date(now.getTime() - 3 * 60 * 60 * 1000)
+    // Si el param date ya viene bien formateado (YYYY-MM-DD), lo usamos directamente.
+    const yyyyDate = date || formatDateToYYYYMMDD(newDate)
 
     if (!storeID) {
         let stores: Awaited<ReturnType<typeof getAllStores>> = []
@@ -183,7 +188,7 @@ const HomePage = async ({ searchParams }: SearchParams) => {
                 <div className="flex flex-col sm:flex-row flex-wrap item-center sm:items-start justify-between gap-2">
                     {/* <SellButton /> */}
                     <FilterControls stores={allStores} />
-                    <ResumeDebitCreditPayment resume={resume ?? undefined} />
+                    <ResumeDebitCreditPayment salesResume={salesToResume(allSales, newDate)} />
                 </div>
 
                 {/* Resúmenes y gráfico */}
@@ -198,7 +203,7 @@ const HomePage = async ({ searchParams }: SearchParams) => {
                             <AccordionContent className="block space-y-6 sm:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4 xl:gap-4 lg:items-start">
                                 <ResumeLeftSideChart resume={resume ?? undefined} />
                                 <TotalSalesResumeGraph resume={resume ?? undefined} />
-                                <ResumeRightSideChart sales={allSalesResume} />
+                                <ResumeRightSideChart sales={salesToResume(allSales, newDate)} />
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
