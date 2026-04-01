@@ -1,7 +1,7 @@
 import { ISaleProduct, IsaleProductReturned, ISaleResponse } from "@/interfaces/sales/ISale"
 
 export const getAnulatedProducts = (sale: ISaleResponse): ISaleProduct[] => {
-    //    Usamos el storeProductID como clave.
+    //    Usamos el saleProductID como clave.
     const anulationMap = new Map<string, IsaleProductReturned>()
     if (!sale.Return) return []
     const { SaleProducts, Return } = sale
@@ -12,11 +12,11 @@ export const getAnulatedProducts = (sale: ISaleResponse): ISaleProduct[] => {
 
     const anulatedProducts: ISaleProduct[] = SaleProducts
         // ➡️ Filtrar: Solo mantiene los productos que tienen un registro en el mapa de anulaciones.
-        .filter((saleP) => anulationMap.has(saleP.storeProductID))
+        .filter((saleP) => anulationMap.has(saleP.saleProductID))
 
         // 🔄 Mapear: Transforma el objeto ISaleProduct.
         .map((saleP) => {
-            const anulationData = anulationMap.get(saleP.storeProductID)! // Es seguro por el filtro
+            const anulationData = anulationMap.get(saleP.saleProductID)! // Es seguro por el filtro
 
             // Crear una copia del producto vendido.
             const modifiedProduct: ISaleProduct = { ...saleP }

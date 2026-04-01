@@ -42,26 +42,27 @@ const buildSearchText = (item: TableItem) => {
     if ("saleID" in item) {
         const storeName = item.Store?.name || "Sucursal"
         const nulledProducts = getAnulatedProducts(item)
-        const totalNulledAmount = nulledProducts.reduce((acc, p) => acc + p.quantitySold * p.unitPrice, 0)
+        const totalNulledAmount = nulledProducts.reduce((acc, p) => acc + p.quantitySold * Number(p.unitPrice), 0)
         const totalNulledUnits = nulledProducts.reduce((acc, p) => acc + p.quantitySold, 0)
 
         const productsText = (item.SaleProducts ?? [])
             .map((sp) => {
-                const nulled = nulledProducts.find((np) => np.storeProductID === sp.storeProductID)
+                const nulled = nulledProducts.find((np) => np.saleProductID === sp.saleProductID)
                 const actualQuantity = sp.quantitySold - (nulled?.quantitySold || 0)
                 if (actualQuantity <= 0) return null
 
-                const name = sp?.StoreProduct?.ProductVariation?.Product?.name ?? "Producto"
-                const sizeNumber = sp?.StoreProduct?.ProductVariation?.sizeNumber ?? ""
-                return `${actualQuantity} x ${name}${sizeNumber ? ` - ${sizeNumber}` : ""}`
+                const label =
+                    (sp?.variation?.sku ?? `${sp?.variation?.color ?? ""} ${sp?.variation?.size ?? ""}`.trim()) ||
+                    "Producto"
+                return `${actualQuantity} x ${label}`
             })
             .filter(Boolean)
             .join(" ")
 
         const saleFullyNulled =
             (item.SaleProducts ?? []).length > 0 &&
-            item.SaleProducts.every((sp) => {
-                const nulled = nulledProducts.find((np) => np.storeProductID === sp.storeProductID)
+            (item.SaleProducts ?? []).every((sp) => {
+                const nulled = nulledProducts.find((np) => np.saleProductID === sp.saleProductID)
                 return sp.quantitySold - (nulled?.quantitySold || 0) <= 0
             })
 
@@ -150,7 +151,7 @@ const SalesTable: React.FC<Props> = ({ items }) => {
                                 const storeName = item.Store?.name || "Sucursal"
                                 const nulledProducts = getAnulatedProducts(item)
                                 const totalNulledAmount = nulledProducts.reduce(
-                                    (acc, p) => acc + p.quantitySold * p.unitPrice,
+                                    (acc, p) => acc + p.quantitySold * Number(p.unitPrice),
                                     0,
                                 )
                                 const totalNulledUnits = nulledProducts.reduce((acc, p) => acc + p.quantitySold, 0)
@@ -166,26 +167,27 @@ const SalesTable: React.FC<Props> = ({ items }) => {
                                             <DateCell date={item.createdAt} />
                                         </TableCell>
                                         <TableCell align="left" className="max-w-96">
-                                            {item.SaleProducts.map((sp) => {
+                                            {(item.SaleProducts ?? []).map((sp) => {
                                                 const nulled = nulledProducts.find(
-                                                    (np) => np.storeProductID === sp.storeProductID,
+                                                    (np) => np.saleProductID === sp.saleProductID,
                                                 )
                                                 const actualQuantity = sp.quantitySold - (nulled?.quantitySold || 0)
 
                                                 if (actualQuantity <= 0) return null
 
-                                                const { name } =
-                                                    sp?.StoreProduct?.ProductVariation?.Product ?? "Producto"
-                                                const { sizeNumber } = sp?.StoreProduct?.ProductVariation
+                                                const label =
+                                                    (sp?.variation?.sku ??
+                                                        `${sp?.variation?.color ?? ""} ${sp?.variation?.size ?? ""}`.trim()) ||
+                                                    "Producto"
                                                 return (
-                                                    <p key={sp.SaleProductID}>
-                                                        {actualQuantity} x {name} - {sizeNumber}
+                                                    <p key={sp.saleProductID}>
+                                                        {actualQuantity} x {label}
                                                     </p>
                                                 )
                                             })}
-                                            {item.SaleProducts.every((sp) => {
+                                            {(item.SaleProducts ?? []).every((sp) => {
                                                 const nulled = nulledProducts.find(
-                                                    (np) => np.storeProductID === sp.storeProductID,
+                                                    (np) => np.saleProductID === sp.saleProductID,
                                                 )
                                                 return sp.quantitySold - (nulled?.quantitySold || 0) <= 0
                                             }) && <p className="text-rose-600 italic">Venta anulada por completo</p>}

@@ -1,6 +1,35 @@
 import { API_URL } from "@/lib/enviroments"
 import { fetcher } from "@/lib/fetcher"
-import { ISaleResponse } from "@/interfaces/sales/ISale"
+import { ISaleProduct, ISaleResponse } from "@/interfaces/sales/ISale"
+import { IStore } from "@/interfaces/stores/IStore"
+import { ISaleReturn, PaymentStatus } from "@/interfaces/sales/ISale"
+
+type RawSale = {
+    saleID: string
+    storeID: string
+    store?: IStore
+    Store?: IStore
+    status: PaymentStatus
+    total: string | number
+    paymentType?: string
+    createdAt: string
+    updatedAt?: string
+    saleProducts?: ISaleProduct[]
+    SaleProducts?: ISaleProduct[]
+    Return?: ISaleReturn | null
+}
+
+const normalizeSale = (sale: RawSale): ISaleResponse => ({
+    ...sale,
+    Store: (sale.Store ?? sale.store ?? {}) as IStore,
+    total: typeof sale.total === "string" ? parseFloat(sale.total) : sale.total,
+    SaleProducts: (sale.SaleProducts ?? sale.saleProducts ?? []).map((sp) => ({
+        ...sp,
+        unitPrice: typeof sp.unitPrice === "string" ? parseFloat(sp.unitPrice as string) : sp.unitPrice,
+        subtotal: typeof sp.subtotal === "string" ? parseFloat(sp.subtotal as string) : sp.subtotal,
+    })),
+    Return: sale.Return ?? null,
+})
 
 /**
  * Obtiene todas las ventas registradas.
@@ -15,22 +44,19 @@ export const getSales = async (storeID?: string, date?: string): Promise<ISaleRe
         url += `?${params.toString()}`
     }
 
-    let sales: ISaleResponse[] = []
+    let sales: RawSale[] = []
     try {
-        sales = await fetcher<ISaleResponse[]>(url)
+        sales = await fetcher<RawSale[]>(url)
     } catch (error) {
         console.warn("getSales: Error al obtener las ventas:", error)
         return []
     }
 
-    // Validamos que sales sea un array para evitar el error "sales.map is not a function"
     if (!Array.isArray(sales)) {
         console.warn("getSales: La respuesta de la API no es un array:", sales)
         return []
     }
 
-    // Si hay ventas anuladas, traemos el detalle para obtener la información del Return
-    // que usualmente no viene en el listado general
     const salesWithDetails = await Promise.all(
         sales.map(async (sale) => {
             if (sale.status === "Anulado" && !sale.Return) {
@@ -38,10 +64,10 @@ export const getSales = async (storeID?: string, date?: string): Promise<ISaleRe
                     return await getSingleSale(sale.saleID)
                 } catch (error) {
                     console.error(`Error fetching details for sale ${sale.saleID}:`, error)
-                    return sale
+                    return normalizeSale(sale)
                 }
             }
-            return sale
+            return normalizeSale(sale)
         }),
     )
 

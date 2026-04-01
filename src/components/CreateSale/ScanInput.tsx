@@ -68,12 +68,16 @@ export const ScanInput = ({ initialProducts }: Props) => {
 
                         setProductCode("")
                     } else {
+                        if (!storeSelected) {
+                            toast.error("No hay tienda seleccionada")
+                            return
+                        }
                         const storeProduct: IStoreProduct = {
                             createdAt: variationFinded.createdAt,
                             priceCostStore: variationFinded.priceCost.toString(),
                             quantity: 0,
-                            Store: storeSelected!,
-                            storeID: storeSelected!.storeID,
+                            Store: storeSelected,
+                            storeID: storeSelected.storeID,
                             storeProductID: "",
                             updatedAt: variationFinded.updatedAt,
                             variationID: variationFinded.variationID,

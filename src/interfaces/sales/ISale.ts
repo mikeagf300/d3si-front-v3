@@ -1,5 +1,3 @@
-import { IProduct } from "../products/IProduct"
-import { IProductVariation } from "../products/IProductVariation"
 import { IStore } from "../stores/IStore"
 import { IUser } from "../users/IUser"
 
@@ -29,14 +27,27 @@ export interface IProductSold {
     quantitySold: number
 }
 
+// Variación de producto dentro de una venta (tal como la devuelve el API)
+export interface IVariationInSale {
+    variationID: string
+    productID: string
+    sku: string
+    color: string
+    size: string
+    createdAt: string
+    updatedAt: string
+}
+
 export interface ISaleProduct {
-    SaleProductID: string
-    storeProductID: string
+    saleProductID: string
+    saleID: string
+    variationID: string
+    variation: IVariationInSale
+    unitPrice: number | string
+    subtotal: number | string
     quantitySold: number
-    unitPrice: number
-    StoreProduct: {
-        ProductVariation: IProductVariation & { Product: IProduct }
-    }
+    createdAt: string
+    updatedAt: string
 }
 
 // Para representar una venta que viene desde el backend (respuesta)

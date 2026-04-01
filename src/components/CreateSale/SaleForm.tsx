@@ -4,7 +4,7 @@ import { ScanInput } from "@/components/CreateSale/ScanInput"
 import { CartTable } from "@/components/CreateSale/CartTable"
 import { useSaleStore } from "@/stores/sale.store"
 import { ISaleRequest, PaymentType } from "@/interfaces/sales/ISale"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { IProduct } from "@/interfaces/products/IProduct"
 import { toPrice } from "@/utils/priceFormat"
@@ -15,10 +15,14 @@ import { toast } from "sonner"
 
 export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) => {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { cartItems, paymentMethod, actions } = useSaleStore()
     const { setPaymentMethod, clearCart } = actions
     const { storeSelected } = useTienda()
     const [loading, setLoading] = useState(false)
+
+    // Prefer storeSelected from Zustand; fallback to storeID directly from the URL
+    const effectiveStoreID = storeSelected?.storeID ?? searchParams.get("storeID") ?? ""
 
     const total = useMemo(() => {
         return cartItems.reduce((acc, item) => {
@@ -34,10 +38,10 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
                 return toast.error("Por favor elimina los productos sin stock")
             }
             setLoading(true)
-            if (!storeSelected) return toast.error("No hay una tienda elegida")
+            if (!effectiveStoreID) return toast.error("No hay una tienda elegida")
             const toSubmitSale: ISaleRequest = {
                 paymentType: paymentMethod,
-                storeID: storeSelected.storeID,
+                storeID: effectiveStoreID,
                 items: cartItems.map((item) => ({
                     variationID: item.variation.variationID,
                     quantity: item.variation.quantity,
@@ -50,7 +54,7 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
                 toast.success("Venta generada exitosamente! Redirigiendo...")
                 actions.clearCart()
                 router.refresh()
-                router.push(`/home?storeID=${storeSelected?.storeID}`)
+                router.push(`/home?storeID=${effectiveStoreID}`)
             }
         } catch (error) {
             toast.error("Falló al crear la venta :(")
