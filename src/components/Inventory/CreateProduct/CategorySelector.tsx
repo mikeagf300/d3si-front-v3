@@ -1,84 +1,83 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, Plus } from "lucide-react";
-import { ICategory } from "@/interfaces/categories/ICategory";
-import { CategoryManagementModal } from "@/components/CategorySection/EditCategory/CategoryManagementModal";
+import React, { useState, useEffect, useRef } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { ChevronDown, Plus } from "lucide-react"
+import { ICategory } from "@/interfaces/categories/ICategory"
+import { CategoryManagementModal } from "@/components/CategorySection/EditCategory/CategoryManagementModal"
 
 interface CategoryOption {
-    id: string;
-    label: string;
-    parentName: string;
-    childName: string;
+    id: string
+    label: string
+    parentName: string
+    childName: string
 }
 
 interface CategorySelectorProps {
-    categories: ICategory[];
-    selectedCategoryId: string;
-    onCategorySelect: (categoryId: string) => void;
-    error?: string;
+    categories: ICategory[]
+    selectedCategoryId: string
+    onCategorySelect: (categoryId: string) => void
+    error?: string
 }
 
 const normalizeText = (text: string) => {
-    return text.toLowerCase().replace(/\s+/g, " ").trim();
-};
+    return text.toLowerCase().replace(/\s+/g, " ").trim()
+}
 
 export function CategorySelector({ categories, selectedCategoryId, onCategorySelect, error }: CategorySelectorProps) {
-    const [showModal, setShowModal] = useState(false);
-    const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
-    const [search, setSearch] = useState("");
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [filteredOptions, setFilteredOptions] = useState<CategoryOption[]>([]);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [showModal, setShowModal] = useState(false)
+    const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
+    const [search, setSearch] = useState("")
+    const [showDropdown, setShowDropdown] = useState(false)
+    const [filteredOptions, setFilteredOptions] = useState<CategoryOption[]>([])
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const subcategories = categories.flatMap((c) => c.subcategories);
+        const subcategories = categories.flatMap((c) => c.subcategories)
         const subCatOptions: CategoryOption[] = subcategories.map((cat) => ({
             id: cat?.categoryID ?? "",
             childName: cat?.name ?? "",
             label: `${categories.find((c) => c.categoryID === cat?.parentID)?.name} / ${cat?.name}`,
             parentName: categories.find((c) => c.categoryID === cat?.parentID)?.name ?? "",
-        }));
-        setCategoryOptions(subCatOptions);
+        }))
+        setCategoryOptions(subCatOptions)
 
-        const selectedOption = subCatOptions.find(option => option.id === selectedCategoryId);
+        const selectedOption = subCatOptions.find((option) => option.id === selectedCategoryId)
         if (selectedOption) {
-            setSearch(selectedOption.label);
+            setSearch(selectedOption.label)
         }
-
-    }, [categories, selectedCategoryId]);
+    }, [categories, selectedCategoryId])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setShowDropdown(false);
+                setShowDropdown(false)
             }
-        };
+        }
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => document.removeEventListener("mousedown", handleClickOutside)
+    }, [])
 
     const handleSearch = (searchValue: string) => {
-        setSearch(searchValue);
+        setSearch(searchValue)
 
-        const normalizedSearch = normalizeText(searchValue);
+        const normalizedSearch = normalizeText(searchValue)
         const filtered = categoryOptions.filter((option) => {
-            const normalizedLabel = normalizeText(option.label);
-            return normalizedLabel.includes(normalizedSearch);
-        });
+            const normalizedLabel = normalizeText(option.label)
+            return normalizedLabel.includes(normalizedSearch)
+        })
 
-        setFilteredOptions(filtered);
-        setShowDropdown(searchValue.length > 0);
-    };
+        setFilteredOptions(filtered)
+        setShowDropdown(searchValue.length > 0)
+    }
 
     const handleSelect = (option: CategoryOption) => {
-        onCategorySelect(option.id);
-        setSearch(option.label);
-        setShowDropdown(false);
-    };
+        onCategorySelect(option.id)
+        setSearch(option.label)
+        setShowDropdown(false)
+    }
 
     return (
         <div className="space-y-3">
@@ -93,10 +92,7 @@ export function CategorySelector({ categories, selectedCategoryId, onCategorySel
                 >
                     <Plus className="w-4 h-4 mr-1" />
                 </Button>
-                <CategoryManagementModal
-                    isOpen={showModal}
-                    onClose={() => setShowModal(false)}
-                />
+                <CategoryManagementModal isOpen={showModal} onClose={() => setShowModal(false)} />
             </div>
             <div className="relative" ref={dropdownRef}>
                 <Input
@@ -125,9 +121,7 @@ export function CategorySelector({ categories, selectedCategoryId, onCategorySel
                                         {option.parentName}
                                     </div>
                                     <ChevronDown className="w-3 h-3 text-gray-400 rotate-[-90deg]" />
-                                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                                        {option.childName}
-                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-300">{option.childName}</div>
                                 </div>
                             </Button>
                         ))}
@@ -141,5 +135,5 @@ export function CategorySelector({ categories, selectedCategoryId, onCategorySel
                 </div>
             )}
         </div>
-    );
+    )
 }
