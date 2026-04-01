@@ -23,6 +23,18 @@ const nextConfig: NextConfig = {
                 protocol: "https",
                 hostname: "*.procircuit.cl",
             },
+            {
+                protocol: "https",
+                hostname: "example.com",
+            },
+            {
+                protocol: "https",
+                hostname: "*.licdn.com",
+            },
+            {
+                protocol: "https",
+                hostname: "*.ejemplo.com",
+            },
         ],
     },
 }
