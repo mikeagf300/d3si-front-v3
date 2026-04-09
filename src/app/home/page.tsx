@@ -9,7 +9,6 @@ import ResumeLeftSideChart from "@/components/Caja/ResumeLeftSideChart"
 import TotalSalesResumeGraph from "@/components/Caja/TotalSalesResumeGraph"
 import ResumeRightSideChart from "@/components/Caja/ResumeRightSideChart"
 import SalesTable from "@/components/Caja/SalesTable"
-import { formatDateToYYYYMMDD } from "@/utils/dateTransforms"
 import { salesToResume } from "@/utils/saleToResume"
 import { Suspense } from "react"
 import SalesAndResumeSkeleton from "@/components/skeletons/SalesAndResume"
@@ -25,6 +24,18 @@ import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
+const CHILE_TZ = "America/Santiago"
+const chileYmdFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CHILE_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+})
+
+const getChileYYYYMMDD = (d: Date): string => chileYmdFormatter.format(d)
+
+const isYYYYMMDD = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value)
+
 interface SearchParams {
     searchParams: Promise<{
         storeID: string
@@ -34,15 +45,13 @@ interface SearchParams {
 
 const HomePage = async ({ searchParams }: SearchParams) => {
     const { storeID = "", date = "" } = await searchParams
-    const [year, month, day] = date.split("-").map(Number)
     const now = new Date()
+    const yyyyDate = isYYYYMMDD(date) ? date : getChileYYYYMMDD(now)
+    const [year, month, day] = yyyyDate.split("-").map(Number)
+
     // Date.UTC garantiza mediodía UTC independiente del timezone del servidor.
-    // Mediodía UTC = 09:00 Chile (UTC-3) → siempre cae en el día correcto.
-    const newDate = day
-        ? new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
-        : new Date(now.getTime() - 3 * 60 * 60 * 1000)
-    // Si el param date ya viene bien formateado (YYYY-MM-DD), lo usamos directamente.
-    const yyyyDate = date || formatDateToYYYYMMDD(newDate)
+    // Mediodía UTC siempre cae en el día correcto para Chile.
+    const newDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
 
     if (!storeID) {
         let stores: Awaited<ReturnType<typeof getAllStores>> = []
