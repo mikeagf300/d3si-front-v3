@@ -43,7 +43,8 @@ export const fetcher = async <T>(url: string, options: RequestInit = {}): Promis
     }
 
     const headers: HeadersInit = {
-        "Content-Type": "application/json",
+        // Solo enviar Content-Type cuando hay body; los DELETE/GET sin body no deben incluirlo.
+        ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
     }

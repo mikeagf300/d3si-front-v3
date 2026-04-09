@@ -46,11 +46,24 @@ export function CategoryItem({ category }: CategoryItemProps) {
     }
 
     const handleDelete = async () => {
-        if (!confirm("¿Estás seguro de eliminar esta categoría y todas sus subcategorías?")) return
+        const hasChildren = (category.subcategories?.length ?? 0) > 0
+        const msg = hasChildren
+            ? `¿Estás seguro de eliminar "${category.name}" y sus ${category.subcategories!.length} subcategoría(s)?`
+            : `¿Estás seguro de eliminar la categoría "${category.name}"?`
+
+        if (!confirm(msg)) return
 
         try {
             setLoading(true)
+
+            // Primero eliminar cada subcategoría en orden
+            for (const sub of category.subcategories ?? []) {
+                await deleteCategory(sub.categoryID)
+            }
+
+            // Luego eliminar la categoría padre
             await deleteCategory(category.categoryID)
+
             toast.success("Categoría eliminada con éxito")
             await fetchCategories()
         } catch (error) {
