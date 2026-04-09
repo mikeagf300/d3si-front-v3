@@ -453,8 +453,8 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                     className="font-bold text-sm"
                                                 >
                                                     {user?.role === Role.Admin
-                                                        ? productData?.stockQuantity
-                                                        : productData?.quantity}
+                                                        ? variation.stockQuantity
+                                                        : (productData?.quantity ?? variation.stockQuantity)}
                                                 </Badge>
                                             )}
                                         </TableCell>
