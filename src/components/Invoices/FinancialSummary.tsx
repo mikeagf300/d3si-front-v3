@@ -20,15 +20,7 @@ export default function FinancialSummary({ total, discount }: Props) {
                 Desglose de Totales
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="text-center">
-                    <p className="text-sm text-blue-600 dark:text-blue-300 mb-1">Subtotal</p>
-                    <p className="text-lg font-medium text-gray-700 dark:text-gray-300">${toPrice(subtotal)}</p>
-                </div>
-                <div className="text-center">
-                    <p className="text-sm text-blue-600 dark:text-blue-300 mb-1">Descuento</p>
-                    <p className="text-lg font-medium text-red-600 dark:text-red-400">-${toPrice(discount)}</p>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="text-center">
                     <p className="text-sm text-blue-600 dark:text-blue-300 mb-1">Neto</p>
                     <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">${toPrice(total)}</p>
