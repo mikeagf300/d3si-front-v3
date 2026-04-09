@@ -1,4 +1,4 @@
-import { getSales } from "@/actions/sales/getSales"
+import { getSales, getSalesForResume } from "@/actions/sales/getSales"
 import { getResume } from "@/actions/totals/getResume"
 import { getWooCommerceOrders } from "@/actions/woocommerce/getWooOrder"
 import { mapWooOrderToSale } from "@/utils/mappers/woocommerceToSale"
@@ -77,8 +77,9 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     // Determinar qué tienda usar para la API de ventas (vacío para traer todas si es especial)
     const apiSalesStoreID = isSpecialFilter ? "" : storeID
 
-    const [sales, wooOrders, resume, allOrders, allProducts] = await Promise.all([
+    const [sales, resumeSales, wooOrders, resume, allOrders, allProducts] = await Promise.all([
         getSales(apiSalesStoreID || "", yyyyDate),
+        getSalesForResume(apiSalesStoreID || "", yyyyDate),
         getWooCommerceOrders(newDate),
         getResume(chartStoreID || "", yyyyDate).catch((err) => {
             console.warn("HomePage: No se pudo obtener el resumen (getResume):", err.message)
@@ -107,6 +108,22 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const filteredWooSales = storeID === "all" || storeID === "propias" ? wooSales : []
 
     const allSales = [...tableSales, ...filteredWooSales]
+
+    // Ventas usadas para los resúmenes: mes en curso + últimos 7 días (para que month no quede en 0)
+    const resumeLocalSales = resumeSales.filter((sale) => {
+        if (storeID === "all") return true
+        if (storeID === "propias") {
+            const store = allStores.find((s) => s.storeID === sale.storeID)
+            return store?.isCentralStore === true
+        }
+        if (storeID === "consignadas") {
+            const store = allStores.find((s) => s.storeID === sale.storeID)
+            return store?.isCentralStore === false
+        }
+        return sale.storeID === storeID
+    })
+
+    const allSalesForResume = [...resumeLocalSales, ...filteredWooSales]
     const purchaseOrders: (IPurchaseOrder & { isOrder: true })[] = allOrders
         .filter((order) => {
             if (storeID === "all") return true
@@ -122,72 +139,35 @@ const HomePage = async ({ searchParams }: SearchParams) => {
     const wooResume = salesToResume(wooSales, newDate)
 
     // Importante: para los gráficos (resume), usamos solo las ventas de la tienda seleccionada (o la default)
-    const chartSales = isSpecialFilter ? sales.filter((s) => s.storeID === chartStoreID) : sales
+    // y usamos el set mensual (resumeSales) para poder calcular el mes en curso.
+    const chartSales = isSpecialFilter ? resumeSales.filter((s) => s.storeID === chartStoreID) : resumeSales
 
     const localSalesResume = salesToResume(chartSales, newDate)
-    const patchedSalesResume = resume?.totales?.sales
-        ? { ...resume.totales.sales }
-        : {
-              today: {
-                  total: { count: 0, amount: 0 },
-                  efectivo: { count: 0, amount: 0 },
-                  debitoCredito: { count: 0, amount: 0 },
-              },
-              yesterday: {
-                  total: { count: 0, amount: 0 },
-                  efectivo: { count: 0, amount: 0 },
-                  debitoCredito: { count: 0, amount: 0 },
-              },
-              last7: {
-                  total: { count: 0, amount: 0 },
-                  efectivo: { count: 0, amount: 0 },
-                  debitoCredito: { count: 0, amount: 0 },
-              },
-              month: {
-                  total: { count: 0, amount: 0 },
-                  efectivo: { count: 0, amount: 0 },
-                  debitoCredito: { count: 0, amount: 0 },
-              },
-          }
 
-    if (!resume?.totales?.sales) {
-        console.warn("HomePage: El resumen (resume.totales.sales) no es válido o está incompleto:", resume)
+    // Siempre usamos los datos locales (más completos: mes en curso + últimos 7 días)
+    // para sobrescribir los periodos del backend. Así el gauge y demás gráficos nunca quedan en $0.
+    const mergedSalesResume = {
+        today: localSalesResume.today,
+        yesterday: localSalesResume.yesterday,
+        last7: localSalesResume.last7,
+        month: localSalesResume.month,
     }
 
-    // Corregimos discrepancias en los totales del backend (que a veces ignora ventas anuladas parcialmente)
-    // usando nuestra lógica local para la fecha seleccionada.
-    const diffAmount = localSalesResume.today.total.amount - patchedSalesResume.today.total.amount
-    const diffCount = localSalesResume.today.total.count - patchedSalesResume.today.total.count
-    const diffEfectivoAmount = localSalesResume.today.efectivo.amount - patchedSalesResume.today.efectivo.amount
-    const diffEfectivoCount = localSalesResume.today.efectivo.count - patchedSalesResume.today.efectivo.count
-    const diffDebitoAmount = localSalesResume.today.debitoCredito.amount - patchedSalesResume.today.debitoCredito.amount
-    const diffDebitoCount = localSalesResume.today.debitoCredito.count - patchedSalesResume.today.debitoCredito.count
-
-    if (diffAmount !== 0 || diffCount !== 0) {
-        patchedSalesResume.today = localSalesResume.today
-
-        // Aplicamos la diferencia al mes
-        patchedSalesResume.month.total.amount += diffAmount
-        patchedSalesResume.month.total.count += diffCount
-        patchedSalesResume.month.efectivo.amount += diffEfectivoAmount
-        patchedSalesResume.month.efectivo.count += diffEfectivoCount
-        patchedSalesResume.month.debitoCredito.amount += diffDebitoAmount
-        patchedSalesResume.month.debitoCredito.count += diffDebitoCount
-
-        // Aplicamos la diferencia a los últimos 7 días
-        patchedSalesResume.last7.total.amount += diffAmount
-        patchedSalesResume.last7.total.count += diffCount
-        patchedSalesResume.last7.efectivo.amount += diffEfectivoAmount
-        patchedSalesResume.last7.efectivo.count += diffEfectivoCount
-        patchedSalesResume.last7.debitoCredito.amount += diffDebitoAmount
-        patchedSalesResume.last7.debitoCredito.count += diffDebitoCount
-
-        if (resume?.totales) {
-            resume.totales.sales = patchedSalesResume
-        }
+    // Construir un IResume completo que siempre tiene datos, incluso si el backend devolvió null.
+    const finalResume: import("@/interfaces/sales/ISalesResume").IResume = {
+        metaMensual: resume?.metaMensual ?? null,
+        totales: {
+            sales: mergedSalesResume,
+            orders: resume?.totales?.orders ?? {
+                today: { count: 0, amount: 0 },
+                yesterday: { count: 0, amount: 0 },
+                last7: { count: 0, amount: 0 },
+                month: { count: 0, amount: 0 },
+            },
+        },
     }
 
-    const allSalesResume = totalDebitoCredito([patchedSalesResume, wooResume])
+    const allSalesResume = totalDebitoCredito([mergedSalesResume, wooResume])
 
     return (
         <>
@@ -197,7 +177,7 @@ const HomePage = async ({ searchParams }: SearchParams) => {
                 <div className="flex flex-col sm:flex-row flex-wrap item-center sm:items-start justify-between gap-2">
                     {/* <SellButton /> */}
                     <FilterControls stores={allStores} />
-                    <ResumeDebitCreditPayment salesResume={salesToResume(allSales, newDate)} />
+                    <ResumeDebitCreditPayment salesResume={salesToResume(allSalesForResume, newDate)} />
                 </div>
 
                 {/* Resúmenes y gráfico */}
@@ -210,9 +190,9 @@ const HomePage = async ({ searchParams }: SearchParams) => {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="block space-y-6 sm:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4 xl:gap-4 lg:items-start">
-                                <ResumeLeftSideChart resume={resume ?? undefined} />
-                                <TotalSalesResumeGraph resume={resume ?? undefined} />
-                                <ResumeRightSideChart sales={salesToResume(allSales, newDate)} />
+                                <ResumeLeftSideChart resume={finalResume} />
+                                <TotalSalesResumeGraph resume={finalResume} />
+                                <ResumeRightSideChart sales={salesToResume(allSalesForResume, newDate)} />
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>

@@ -4,6 +4,32 @@ import { ISaleProduct, ISaleResponse } from "@/interfaces/sales/ISale"
 import { IStore } from "@/interfaces/stores/IStore"
 import { ISaleReturn, PaymentStatus } from "@/interfaces/sales/ISale"
 
+const CHILE_TZ = "America/Santiago"
+const chileDateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CHILE_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+})
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+const getChileDateMeta = (date: Date) => {
+    const parts = chileDateFormatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+        if (part.type === "year" || part.type === "month" || part.type === "day") acc[part.type] = part.value
+        return acc
+    }, {})
+    const year = Number(parts.year)
+    const month = Number(parts.month) - 1
+    const day = Number(parts.day)
+    return {
+        year,
+        month,
+        day,
+        dayNumber: Date.UTC(year, month, day),
+    }
+}
+
 type RawSale = {
     saleID: string
     storeID: string
@@ -84,4 +110,29 @@ export const getSingleSale = async (saleID: string, storeID?: string): Promise<I
     const url = `${API_URL}/sales/${saleID}${params.toString() ? `?${params.toString()}` : ""}`
     const raw = await fetcher<RawSale>(url)
     return normalizeSale(raw)
+}
+
+/**
+ * Ventas para construir resumen del mes en curso (y últimos 7 días) en la fecha de referencia.
+ * Útil cuando la API solo soporta `date` (día) pero el front necesita totales del mes.
+ */
+export const getSalesForResume = async (storeID: string | undefined, refYYYYMMDD: string): Promise<ISaleResponse[]> => {
+    const [year, month, day] = refYYYYMMDD.split("-").map(Number)
+    if (!year || !month || !day) {
+        console.warn("getSalesForResume: refYYYYMMDD inválido:", refYYYYMMDD)
+        return []
+    }
+
+    // Mediodía UTC para anclar el día en Chile de forma determinística.
+    const refDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
+    const refMeta = getChileDateMeta(refDate)
+    const last7StartDayNumber = refMeta.dayNumber - 6 * DAY_MS
+
+    const allSales = await getSales(storeID)
+    return allSales.filter((sale) => {
+        const saleMeta = getChileDateMeta(new Date(sale.createdAt))
+        const inLast7 = saleMeta.dayNumber >= last7StartDayNumber && saleMeta.dayNumber <= refMeta.dayNumber
+        const inMonth = saleMeta.year === refMeta.year && saleMeta.month === refMeta.month
+        return inLast7 || inMonth
+    })
 }
