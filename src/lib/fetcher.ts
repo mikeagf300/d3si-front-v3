@@ -20,13 +20,13 @@ const getServerToken = async (): Promise<string | null> => {
         const cookieStore = await cookies()
         const tokenValue = cookieStore.get("auth_token")?.value ?? null
         if (!tokenValue) {
-            console.warn("⚠️ [fetcher SERVER] No se encontró auth_token en las cookies del servidor")
+            console.warn(" [fetcher SERVER] No se encontró auth_token en las cookies del servidor")
         } else {
-            console.log("✅ [fetcher SERVER] Token encontrado en cookie del servidor")
+            console.log(" [fetcher SERVER] Token encontrado en cookie del servidor")
         }
         return tokenValue
     } catch (error) {
-        console.error("❌ [fetcher SERVER] Error al leer cookies:", error)
+        console.error(" [fetcher SERVER] Error al leer cookies:", error)
         return null
     }
 }

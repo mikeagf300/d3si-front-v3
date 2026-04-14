@@ -63,7 +63,7 @@ export default function PurchaseOrderClient({
             )
         }
         return filteredAndSortedProducts
-    }, [filteredAndSortedProducts, storeSelected?.storeID, user?.role, storeSelected?.storeID])
+    }, [filteredAndSortedProducts, storeSelected?.storeID, user?.role])
 
     // 2. Filtrar productos por búsqueda
     const searchedProducts = useMemo(() => {
@@ -213,13 +213,13 @@ export default function PurchaseOrderClient({
     useEffect(() => {
         setRawProducts(initialProducts)
         setSelectedFilter("genre")
-    }, [])
+    }, [initialProducts, setRawProducts, setSelectedFilter])
 
     useEffect(() => {
         return () => {
             setStoreSelected(initialStores[0])
         }
-    }, [])
+    }, [initialStores, setStoreSelected])
 
     return (
         <>
@@ -250,7 +250,7 @@ export default function PurchaseOrderClient({
                                                 setStoreSelected(findedStore)
                                             }}
                                         >
-                                            <SelectTrigger className="w-[300px] h-11 border-2">
+                                            <SelectTrigger className="w-75 h-11 border-2">
                                                 <SelectValue placeholder="Seleccionar tienda" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -263,7 +263,7 @@ export default function PurchaseOrderClient({
                                         </Select>
                                     ) : (
                                         <Select value={storeSelected?.storeID || ""} disabled>
-                                            <SelectTrigger className="w-[300px] h-11 border-2">
+                                            <SelectTrigger className="w-75 h-11 border-2">
                                                 <SelectValue placeholder="Seleccionar tienda" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -398,7 +398,7 @@ export default function PurchaseOrderClient({
                 )}
             </main>
             <MotionItem>
-                <div className="fixed left-0 right-0 bottom-0 z-50 dark:bg-slate-900 bg-slate-200 shadow-[4px_-4px_8px_rgba(0,0,0,0.1)] dark:shadow-slate-950 shadow-slate-400 border-t px-8 py-1 transition-all duration-300 w-full lg:ml-[260px] lg:w-[calc(100%-250px)]">
+                <div className="fixed left-0 right-0 bottom-0 z-50 dark:bg-slate-900 bg-slate-200 shadow-[4px_-4px_8px_rgba(0,0,0,0.1)] dark:shadow-slate-950 shadow-slate-400 border-t px-8 py-1 transition-all duration-300 w-full lg:ml-65 lg:w-[calc(100%-250px)]">
                     <PurchaseOrderSummary />
                 </div>
             </MotionItem>
