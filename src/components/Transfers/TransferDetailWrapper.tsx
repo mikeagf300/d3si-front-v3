@@ -102,12 +102,12 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                     </Button>
                     <div>
                         <h1 className="text-2xl font-bold flex items-center gap-2">
-                            Transferencia <span className="text-blue-600">#{transfer.transferID.slice(0, 8)}</span>
+                            Transferencia <span className="text-blue-600">#{transfer.transferID?.slice(0, 8) ?? "N/A"}</span>
                         </h1>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <span>Origen: Tienda {transfer.originStoreID.slice(0, 4)}</span>
+                            <span>Origen: Tienda {transfer.originStoreID?.slice(0, 4) ?? "N/A"}</span>
                             <ArrowRight size={14} />
-                            <span>Destino: Tienda {transfer.destinationStoreID.slice(0, 4)}</span>
+                            <span>Destino: Tienda {transfer.destinationStoreID?.slice(0, 4) ?? "N/A"}</span>
                         </div>
                     </div>
                 </div>
@@ -242,7 +242,7 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                         <TableRow key={item.transferItemID}>
                                             <TableCell className="font-medium">
                                                 {/* Aquí idealmente mostraríamos el nombre del producto de la variación */}
-                                                Variación {item.variationID.slice(0, 8)}
+                                                Variación {item.variationID?.slice(0, 8) ?? "N/A"}
                                             </TableCell>
                                             <TableCell>{item.variation?.sizeNumber || "-"}</TableCell>
                                             <TableCell className="font-mono text-xs">
