@@ -93,25 +93,25 @@ export function QuotesClient({ products }: QuotesClientProps) {
     }, [selectedProducts])
 
     useEffect(() => {
-        const updatedImages = uniqueSelectedProducts.map((productData) => {
-            const existing = productsImage.find((p) => p.id === productData.product.productID)
-            if (existing) return existing
+        setProductsImage((prev) => {
+            return uniqueSelectedProducts.map((productData) => {
+                const existing = prev.find((p) => p.id === productData.product.productID)
+                if (existing) return existing
 
-            if (productData.product.image) {
+                if (productData.product.image) {
+                    return {
+                        id: productData.product.productID,
+                        image: productData.product.image,
+                    }
+                }
+
                 return {
                     id: productData.product.productID,
-                    image: productData.product.image,
+                    image: "",
                 }
-            }
-
-            return {
-                id: productData.product.productID,
-                image: "",
-            }
+            })
         })
-
-        setProductsImage(updatedImages)
-    }, [productsImage, uniqueSelectedProducts])
+    }, [uniqueSelectedProducts])
 
     const handleImageUpload = (productId: string, file: File) => {
         const reader = new FileReader()

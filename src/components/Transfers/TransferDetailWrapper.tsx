@@ -115,7 +115,7 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                 {isPending && (
                     <Button
                         onClick={handleComplete}
-                        disabled={loadingComplete || transfer.items.length === 0}
+                        disabled={loadingComplete || !Array.isArray(transfer.items) || transfer.items.length === 0}
                         className="bg-green-600 hover:bg-green-700 text-white gap-2"
                     >
                         {loadingComplete ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 size={18} />}
@@ -217,7 +217,7 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                             <Package size={18} className="text-gray-400" />
                             Productos en la transferencia
                         </h2>
-                        <Badge variant="outline">{transfer.items.length} items</Badge>
+                        <Badge variant="outline">{Array.isArray(transfer.items) ? transfer.items.length : 0} items</Badge>
                     </div>
 
                     <div className="flex-1 overflow-auto">
@@ -231,7 +231,7 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {transfer.items.length === 0 ? (
+                                {(!Array.isArray(transfer.items) || transfer.items.length === 0) ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-20 text-gray-400">
                                             Aún no has agregado productos
