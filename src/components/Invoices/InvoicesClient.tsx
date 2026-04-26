@@ -46,7 +46,10 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
             filteredOrders = initialOrders.filter((order) => order.userID === user.userID)
         } else if (isStoreManager && storeSelected?.storeID) {
             // Si es gestor de tienda, mostrar solo las órdenes de la tienda seleccionada
-            filteredOrders = initialOrders.filter((order) => order.storeID === storeSelected.storeID)
+            filteredOrders = initialOrders.filter((order) => {
+                const orderStoreID = order.storeID || order.store?.storeID || order.Store?.storeID
+                return orderStoreID === storeSelected.storeID
+            })
         }
 
         setOrders(filteredOrders)
@@ -92,7 +95,7 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
                             <TableRow
                                 key={order.purchaseOrderID}
                                 onClick={() => {
-                                    const tId = toast.loading(`Cargando orden de ${order.Store?.name ?? "tienda"}`)
+                                    const tId = toast.loading(`Cargando orden de ${order.store?.name || order.Store?.name || "tienda"}`)
                                     setToastId(tId as number)
                                     route.push(`/home/order/${order.purchaseOrderID}`)
                                 }}
@@ -101,11 +104,11 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
                                 <TableCell>{i + 1}</TableCell>
                                 <TableCell>
                                     <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono">
-                                        {order.purchaseOrderID.slice(0, 8)}
+                                        {order.folio || order.purchaseOrderID.slice(0, 8)}
                                     </code>
                                 </TableCell>
                                 <TableCell>{fecha}</TableCell>
-                                <TableCell>{order.Store?.name || getStoreName(order.storeID)}</TableCell>
+                                <TableCell>{order.store?.name || order.Store?.name || getStoreName(order.storeID)}</TableCell>
                                 <TableCell className="font-semibold text-green-600 dark:text-green-400">
                                     ${toPrice(total)}
                                 </TableCell>
@@ -115,10 +118,10 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
                                 <TableCell>
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(
-                                            order.status,
+                                            order.paymentStatus || order.status,
                                         )}`}
                                     >
-                                        {order.status}
+                                        {order.paymentStatus || order.status}
                                     </span>
                                 </TableCell>
                             </TableRow>
