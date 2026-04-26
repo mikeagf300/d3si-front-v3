@@ -27,7 +27,7 @@ export const PrintOrderView = React.forwardRef<HTMLDivElement, Props>(({ order }
                 <div className="text-right">
                     <div className="mb-2">
                         <span className="block text-xs font-bold text-gray-500 uppercase">Folio</span>
-                        <span className="text-xl font-mono font-bold text-gray-900">#{order.orderID.slice(-8)}</span>
+                        <span className="text-xl font-mono font-bold text-gray-900">#{order.folio || order.orderID?.slice(-8) || "N/A"}</span>
                     </div>
                     <div>
                         <span className="block text-xs font-bold text-gray-500 uppercase">Fecha</span>
@@ -44,9 +44,9 @@ export const PrintOrderView = React.forwardRef<HTMLDivElement, Props>(({ order }
                         Información de la Tienda
                     </h2>
                     <div className="text-sm text-gray-800 space-y-1">
-                        <p className="font-bold text-lg">{order.Store?.name}</p>
-                        <p>{order.Store?.address}</p>
-                        <p>Tel: {order.Store?.phone}</p>
+                        <p className="font-bold text-lg">{order.store?.name || order.Store?.name || "N/A"}</p>
+                        <p>{order.store?.address || order.Store?.address || "N/A"}</p>
+                        <p>Tel: {order.store?.phone || order.Store?.phone || "N/A"}</p>
                     </div>
                 </div>
 
@@ -85,7 +85,7 @@ export const PrintOrderView = React.forwardRef<HTMLDivElement, Props>(({ order }
                         {order.ProductVariations.map((item) => (
                             <tr key={item.variationID}>
                                 <td className="py-2 px-3 text-gray-800 font-mono">
-                                    {item.Product.name} ({item.sku})
+                                    {(item.Product?.name || item.product?.name || "Variación")} ({item.sku})
                                 </td>
                                 <td className="py-2 px-3 text-center text-gray-800">{item.sizeNumber}</td>
                                 <td className="py-2 px-3 text-center text-gray-800 font-medium">

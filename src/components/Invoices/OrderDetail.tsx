@@ -16,6 +16,7 @@ import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { useEditOrderStore } from "@/stores/order.store"
 import { useRouter } from "next/navigation"
 import { updatePurchaseOrder } from "@/actions/purchase-orders/updatePurchaseOrder"
+import { updatePurchaseOrderStatus } from "@/actions/purchase-orders/updatePurchaseOrderStatus"
 import { Button } from "../ui/button"
 import { PrintOrderView } from "./PrintOrderView"
 import { useOrderInitialization } from "@/hooks/useOrderInitialization"
@@ -71,12 +72,13 @@ export default function OrderDetail({ order, allProducts }: Props) {
 
     // Transformar datos para PrintOrderView - memoized dependent on incoming order prop
     const printOrderData = useMemo(() => {
+        const orderItems = order.items || order.PurchaseOrderItems || []
         return {
             ...order,
             orderID: order.purchaseOrderID,
-            ProductVariations: (order.PurchaseOrderItems || []).map((poi) => ({
+            ProductVariations: orderItems.map((poi: any) => ({
                 ...poi.variation,
-                quantityOrdered: poi.quantity,
+                quantityOrdered: poi.quantity || poi.quantityRequested,
                 priceCost: poi.unitPrice,
             })),
         }
@@ -108,12 +110,26 @@ export default function OrderDetail({ order, allProducts }: Props) {
             const currentState = useEditOrderStore.getState()
 
             const payload = {
+                paymentStatus: currentState.status,
+                dueDate: currentState.expiration || order.dueDate,
+                dteNumber: currentState.dte || order.dteNumber || "",
                 discount: Number(currentState.discount) || 0,
-                dteNumber: currentState.dte || "",
-                // Otros campos pueden ser añadidos aquí si el store los maneja
+                isThirdParty: order.isThirdParty,
+                storeID: currentState.storeID || order.storeID || order.store?.storeID || order.Store?.storeID,
+                items: currentState.newProducts.map((item) => ({
+                    variationID: item.variation.variationID,
+                    quantity: item.variation.quantity,
+                    unitPrice: item.variation.priceCost,
+                })),
             }
 
             await updatePurchaseOrder(order.purchaseOrderID, payload)
+
+            // Si el estado ha cambiado respecto al original, llamar al endpoint de status
+            if (currentState.status !== (order.paymentStatus || order.status)) {
+                await updatePurchaseOrderStatus(order.purchaseOrderID, currentState.status as any)
+            }
+
             toast.success("Orden actualizada correctamente")
             router.refresh()
         } catch (e) {
@@ -173,7 +189,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
                     </h1>
                 </div>
 
-                <MemoizedStoreInfo store={order.Store} />
+                <MemoizedStoreInfo store={order.store || order.Store} />
 
                 <div className="space-y-6 pt-6">
                     <OrderMainInfo cantidadTotalProductos={cantidadTotalProductos} fecha={fecha} />

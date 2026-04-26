@@ -34,6 +34,7 @@ export interface IUpdatePurchaseOrder {
     isThirdParty?: boolean
     storeID?: string
     status?: PurchaseOrderStatus
+    items?: IPurchaseOrderItem[]
 }
 
 export interface IPurchaseOrder {

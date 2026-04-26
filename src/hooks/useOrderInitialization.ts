@@ -12,26 +12,30 @@ export const useOrderInitialization = (order: IPurchaseOrder) => {
     // Carga la orden en el store global de zustand
     useEffect(() => {
         clearCart()
-        const { PurchaseOrderItems, ...restOrder } = order
+        const orderItems = order.items || order.PurchaseOrderItems || []
 
         // Mapeo manual de campos para compatibilidad con el store existente
         updateOrderStringField("orderID", order.purchaseOrderID)
-        updateOrderStringField("storeID", order.storeID)
+        updateOrderStringField("storeID", order.storeID || order.store?.storeID || order.Store?.storeID || "")
         updateOrderStringField("userID", order.userID)
         updateOrderStringField("total", order.total)
-        updateOrderStringField("status", order.status)
+        updateOrderStringField("status", order.paymentStatus || order.status)
         updateOrderStringField("discount", order.discount)
+        updateOrderStringField("expiration", order.dueDate)
+        updateOrderStringField("dte", order.dteNumber)
         updateOrderStringField("createdAt", order.createdAt)
         updateOrderStringField("updatedAt", order.updatedAt)
 
-        if (order.PurchaseOrderItems) {
-            order.PurchaseOrderItems.forEach((poi) => {
+        if (orderItems.length > 0) {
+            orderItems.forEach((poi: any) => {
+                // El nuevo formato tiene variation.Product, pero si no viene usamos una estructura base
+                const product = poi.variation?.Product || poi.variation?.product || { name: "Producto", productID: "N/A" }
                 const variationWithQuantity = {
                     ...poi.variation,
-                    quantity: poi.quantity,
+                    quantity: poi.quantity || poi.quantityRequested,
                     priceCost: poi.unitPrice,
                 }
-                addProduct(poi.variation.Product, variationWithQuantity)
+                addProduct(product, variationWithQuantity)
             })
         }
     }, [order, addProduct, updateOrderStringField, clearCart])
