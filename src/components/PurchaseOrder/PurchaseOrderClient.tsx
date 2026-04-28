@@ -222,6 +222,7 @@ export default function PurchaseOrderClient({
 
     useEffect(() => {
         return () => {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             setStoreSelected(initialStoresRef.current[0])
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
