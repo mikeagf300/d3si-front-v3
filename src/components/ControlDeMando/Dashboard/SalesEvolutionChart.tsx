@@ -10,9 +10,38 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
-import { ventasData, chartConfig } from "../Data/constants"
 
-export default function SalesEvolutionChart() {
+const chartConfig = {
+    presencial: {
+        label: "Canal Presencial",
+        color: "#22c55e",
+    },
+    mayorista: {
+        label: "Canal Mayorista",
+        color: "#f97316",
+    },
+    web: {
+        label: "Canal Web",
+        color: "#3b82f6",
+    },
+}
+
+export interface SalesEvolutionPoint {
+    mes: string
+    presencial: number
+    mayorista: number
+    web: number
+}
+
+export default function SalesEvolutionChart({
+    data,
+    mayoristaShare,
+    webShare,
+}: {
+    data: SalesEvolutionPoint[]
+    mayoristaShare: number
+    webShare: number
+}) {
     return (
         <div className="lg:col-span-9 lg:row-span-3 relative lg:col-start-4 lg:row-start-5">
             {/* Headers del gráfico - Solo en desktop */}
@@ -22,14 +51,14 @@ export default function SalesEvolutionChart() {
                         <span className="text-green-600">Ranking Ventas</span>
                         <span className="text-green-600">Canal Mayorista</span>
                     </div>
-                    <span className="font-medium mt-3 ml-2 dark:text-white">15%</span>
+                    <span className="font-medium mt-3 ml-2 dark:text-white">{mayoristaShare}%</span>
                 </div>
                 <div className="flex text-center rounded-md dark:bg-gray-800 border-0 shadow-lg py-2 px-6">
                     <div className="flex flex-col">
                         <span className="text-blue-600">Ranking Ventas</span>
                         <span className="text-blue-600">Canal Web</span>
                     </div>
-                    <span className="font-medium mt-3 ml-2 dark:text-white">5%</span>
+                    <span className="font-medium mt-3 ml-2 dark:text-white">{webShare}%</span>
                 </div>
             </div>
             <Card className="dark:bg-gray-800 border-0 shadow-lg">
@@ -39,8 +68,8 @@ export default function SalesEvolutionChart() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ChartContainer className="h-[200px] md:h-[250px] w-full" config={chartConfig}>
-                        <AreaChart data={ventasData}>
+                    <ChartContainer className="h-50 md:h-62.5 w-full" config={chartConfig}>
+                        <AreaChart data={data}>
                             <defs>
                                 <linearGradient id="fillPresencial" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
