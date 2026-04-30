@@ -1,11 +1,13 @@
 import { getTransferById } from "@/actions/transfers/getTransferById"
 import { getAllProducts } from "@/actions/products/getAllProducts"
 import TransferDetailWrapper from "@/components/Transfers/TransferDetailWrapper"
+import { redirect } from "next/navigation"
 
-export default async function TransferDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params
-
-    // El id viene del servidor
+export default async function TransferDetailPage({ params }: { params: { id: string } }) {
+    const { id } = params
+    if (!id || id === "undefined" || id === "null") {
+        redirect("/home/transfers")
+    }
     const [transfer, products] = await Promise.all([getTransferById(id), getAllProducts()])
 
     return (

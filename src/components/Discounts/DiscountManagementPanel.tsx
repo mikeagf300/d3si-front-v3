@@ -45,9 +45,15 @@ export function DiscountManagementPanel({ products }: DiscountManagementPanelPro
                 <div>
                     <p className="text-sm uppercase tracking-wide text-gray-500">Inventario</p>
                     <h1 className="text-2xl font-bold">Ofertas y descuentos</h1>
-                    <p className="text-sm text-gray-500">Crea descuentos por producto o tienda sin salir de este módulo.</p>
+                    <p className="text-sm text-gray-500">
+                        Crea descuentos por producto o tienda sin salir de este módulo.
+                    </p>
                 </div>
-                <Button size="sm" variant="secondary" onClick={() => handleOpenModal(storeProductOptions[0]?.storeProductID)}>
+                <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleOpenModal(storeProductOptions[0]?.storeProductID)}
+                >
                     Crear descuento manual
                 </Button>
             </header>
@@ -70,12 +76,18 @@ export function DiscountManagementPanel({ products }: DiscountManagementPanelPro
                                         Talla {option.variationName} · {option.storeName}
                                     </p>
                                 </div>
-                                <span className="text-sm font-bold text-gray-600">${option.priceList?.toLocaleString("es-CL")}</span>
+                                <span className="text-sm font-bold text-gray-600">
+                                    ${option.priceList?.toLocaleString("es-CL")}
+                                </span>
                             </div>
                             <p className="mt-3 text-xs text-gray-400">storeProductID: {option.storeProductID}</p>
                             <div className="mt-4 flex justify-end">
-                                <Button size="sm" variant="outline" onClick={() => handleOpenModal(option.storeProductID)}>
-                                    Crear oferta
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenModal(option.storeProductID)}
+                                >
+                                    Gestionar oferta
                                 </Button>
                             </div>
                         </article>
@@ -85,7 +97,8 @@ export function DiscountManagementPanel({ products }: DiscountManagementPanelPro
 
             {storeProductOptions.length > previewList.length && (
                 <p className="text-sm text-gray-500">
-                    Se listan los primeros {previewList.length} storeProducts. Usa el botón superior para elegir otro producto.
+                    Se listan los primeros {previewList.length} storeProducts. Usa el botón superior para elegir otro
+                    producto.
                 </p>
             )}
 

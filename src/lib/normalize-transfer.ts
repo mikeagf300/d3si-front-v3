@@ -18,7 +18,10 @@ type RawTransferStore = IStore | null | undefined
 
 export type RawTransferItem = {
     transferItemID?: string
+    transferItemId?: string
+    id?: string
     transferID?: string
+    transferId?: string
     quantity?: number
     createdAt?: string
     updatedAt?: string
@@ -29,6 +32,8 @@ export type RawTransferItem = {
 
 export type RawTransfer = {
     transferID?: string
+    transferId?: string
+    id?: string
     status?: ITransfer["status"] | string
     createdAt?: string
     updatedAt?: string
@@ -56,8 +61,8 @@ const normalizeVariation = (raw: RawTransferVariation | null | undefined): IProd
 })
 
 export const normalizeTransferItem = (raw: RawTransferItem): ITransferItem => ({
-    transferItemID: raw.transferItemID ?? "",
-    transferID: raw.transferID ?? "",
+    transferItemID: raw.transferItemID ?? raw.transferItemId ?? raw.id ?? "",
+    transferID: raw.transferID ?? raw.transferId ?? "",
     variationID: raw.variationID ?? raw.variation?.variationID ?? "",
     quantity: raw.quantity ?? 0,
     createdAt: raw.createdAt ?? "",
@@ -71,12 +76,13 @@ export const normalizeTransfer = (raw: RawTransfer): ITransfer => {
     const items = raw.items ?? raw.transferItems ?? []
 
     return {
-        transferID: raw.transferID ?? "",
+        transferID: raw.transferID ?? raw.transferId ?? raw.id ?? "",
         originStoreID: raw.originStoreID ?? originStore?.storeID ?? "",
         destinationStoreID: raw.destinationStoreID ?? destinationStore?.storeID ?? "",
         status: (raw.status as ITransfer["status"]) ?? "PENDING",
         createdAt: raw.createdAt ?? "",
         updatedAt: raw.updatedAt ?? "",
+        completedAt: raw.completedAt ?? null,
         items: items.map(normalizeTransferItem),
         originStore: originStore ? normalizeStore(originStore) : undefined,
         destinationStore: destinationStore ? normalizeStore(destinationStore) : undefined,

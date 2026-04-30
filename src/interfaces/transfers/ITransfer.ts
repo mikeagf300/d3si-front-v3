@@ -21,6 +21,7 @@ export interface ITransfer {
     status: TransferStatus
     createdAt: string
     updatedAt: string
+    completedAt: string | null
     items: ITransferItem[]
     originStore?: IStore
     destinationStore?: IStore

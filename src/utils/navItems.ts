@@ -7,6 +7,7 @@ import {
     FaUsers,
     FaChartLine,
     FaChartBar,
+    FaTags,
 } from "react-icons/fa"
 
 export const navItems = [
@@ -20,6 +21,7 @@ export const navItems = [
         icon: FaBox,
         subItems: [
             { label: "Mi Inventario", route: "/home/inventory" },
+            { label: "Descuentos", route: "/home/inventory/discounts", icon: FaTags },
             { label: "Transferencias", route: "/home/transfers" },
         ],
     },

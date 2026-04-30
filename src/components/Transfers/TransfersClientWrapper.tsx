@@ -86,7 +86,7 @@ export default function TransfersClientWrapper({ initialTransfers, stores }: Pro
                                             {t.destinationStore?.name || getStoreName(t.destinationStoreID)}
                                         </TableCell>
                                         <TableCell className="text-sm text-gray-500">
-                                            {new Date(t.createdAt).toLocaleDateString()}
+                                            {new Date(t.completedAt || t.createdAt).toLocaleDateString()}
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={`${cfg.color} border-none flex items-center gap-1 w-fit`}>
