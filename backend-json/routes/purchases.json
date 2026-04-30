@@ -1,0 +1,250 @@
+{
+    "/purchase-orders": {
+        "post": {
+            "operationId": "PurchaseOrdersController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreatePurchaseOrderDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "Orden de compra creada.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear una orden de compra",
+            "tags": ["Ordenes de Compra"]
+        },
+        "get": {
+            "operationId": "PurchaseOrdersController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de órdenes de compra.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "PurchaseOrder"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "PurchaseOrder"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Listar órdenes de compra",
+            "tags": ["Ordenes de Compra"]
+        }
+    },
+    "/purchase-orders/{id}": {
+        "get": {
+            "operationId": "PurchaseOrdersController_findOne",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la orden de compra",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Detalle de la orden de compra.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener detalle de una orden de compra",
+            "tags": ["Ordenes de Compra"]
+        },
+        "patch": {
+            "operationId": "PurchaseOrdersController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la orden de compra",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdatePurchaseOrderDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Orden de compra actualizada.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar datos generales de la orden de compra",
+            "tags": ["Ordenes de Compra"]
+        }
+    },
+    "/purchase-orders/{id}/status": {
+        "patch": {
+            "operationId": "PurchaseOrdersController_updateStatus",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la orden de compra",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdatePurchaseOrderStatusDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Estado de orden de compra actualizado.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "PurchaseOrder"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar el estado/pago de la orden de compra",
+            "tags": ["Ordenes de Compra"]
+        }
+    },
+    "/purchase-orders/{id}/verify": {
+        "post": {
+            "operationId": "PurchaseOrdersController_verify",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la orden de compra",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "VerifyPurchaseOrderDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Verificación procesada exitosamente."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Verificar productos recibidos para la orden de compra",
+            "tags": ["Ordenes de Compra"]
+        }
+    }
+}

@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from "react"
 import { useTienda } from "@/stores/tienda.store"
 import { getAllUsers } from "@/actions/users/getAllUsers"
 import { getAllStores } from "@/actions/stores/getAllStores"
-import { getAllUserStores } from "@/actions/userstores/getAllUserStores"
 import UsersTable from "./UsersTable"
 import StoresTable from "./StoresTable"
 import GastosTable from "./GastosTable"
@@ -33,14 +32,8 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
             setIsLoading(true)
             try {
                 if (view === "users") {
-                    const [usuarios, userStores] = await Promise.all([getAllUsers(), getAllUserStores()])
-                    const enriched = usuarios.map((u) => ({
-                        ...u,
-                        Stores: (userStores as any[])
-                            .filter((us: any) => us.user.userID === u.userID)
-                            .map((us: any) => us.store),
-                    }))
-                    setUsers(enriched)
+                    const usuarios = await getAllUsers()
+                    setUsers(usuarios)
                 } else if (view === "stores") {
                     const tiendas = await getAllStores()
                     setStores(tiendas)

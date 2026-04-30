@@ -1,0 +1,216 @@
+{
+    "/products": {
+        "post": {
+            "operationId": "ProductsController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateProductDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "El producto ha sido creado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Product"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Product"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear un nuevo producto con sus variantes",
+            "tags": ["Productos"]
+        },
+        "get": {
+            "operationId": "ProductsController_findAll",
+            "parameters": [
+                {
+                    "name": "limit",
+                    "required": false,
+                    "in": "query",
+                    "description": "Cantidad máxima de elementos a retornar por página",
+                    "schema": {
+                        "minimum": 1,
+                        "default": 10,
+                        "example": 10,
+                        "type": "number"
+                    }
+                },
+                {
+                    "name": "offset",
+                    "required": false,
+                    "in": "query",
+                    "description": "Número de elementos a omitir desde el inicio (para paginación)",
+                    "schema": {
+                        "minimum": 0,
+                        "default": 0,
+                        "example": 0,
+                        "type": "number"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Lista de productos.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Product"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Product"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todos los productos",
+            "tags": ["Productos"]
+        }
+    },
+    "/products/{id}": {
+        "get": {
+            "operationId": "ProductsController_findOne",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID único del producto",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Producto encontrado.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Product"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Producto no encontrado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Product"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Buscar un producto por su ID",
+            "tags": ["Productos"]
+        },
+        "patch": {
+            "operationId": "ProductsController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de producto a actualizar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateProductDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Producto actualizado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Product"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Product"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar un producto por su ID",
+            "tags": ["Productos"]
+        },
+        "delete": {
+            "operationId": "ProductsController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del producto a eliminar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "204": {
+                    "description": "Producto eliminado exitosamente."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Eliminar un producto por su ID",
+            "tags": ["Productos"]
+        }
+    }
+}

@@ -1,5 +1,6 @@
 export type PriceType = "LIST" | "COST"
 export type DiscountType = "PERCENTAGE" | "FIXED_PRICE"
+export type DiscountScope = "UNIT" | "TOTAL"
 
 // ─── Actualización de precio ──────────────────────────────────────────────────
 
@@ -43,6 +44,8 @@ export interface ICreateOfferPayload {
     description?: string
     endDate?: string
     isActive: boolean
+    scope?: DiscountScope
+    exclusive?: boolean
 }
 
 export type IUpdateOfferPayload = Partial<ICreateOfferPayload>
@@ -56,6 +59,8 @@ export interface IOffer {
     startDate: string
     endDate?: string
     isActive: boolean
+    scope?: DiscountScope
+    exclusive?: boolean
     createdAt: string
     updatedAt: string
 }

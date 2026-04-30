@@ -1,12 +1,9 @@
 "use client"
 
 import type React from "react"
-import { MoreVertical, Trash2, Tag } from "lucide-react"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { AddSizeModal } from "@/components/Modals/AddSizeModal"
+import { Tag } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MotionItem } from "@/components/Animations/motionItem"
 import type { IProduct } from "@/interfaces/products/IProduct"
@@ -22,8 +19,6 @@ import { PrintbarcodeModal } from "./PrintBarcodeModal"
 import { useState } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { IProductVariation } from "@/interfaces/products/IProductVariation"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 import { PricingModal } from "./PricingModal"
 
 interface InventoryTableProps {
@@ -63,27 +58,10 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
         product: IProduct
         variation: IProductVariation
     } | null>(null)
-    const router = useRouter()
-
     const printBarcodeModal = (sku: string | null) => {
         setOpenSku(sku)
     }
     const isEditable = user?.role !== Role.Vendedor && user?.role !== Role.Tercero
-
-    // TODO: Backend no soporta eliminar variaciones individuales, solo productos completos
-    // const handleDeleteVariation = async (sku: string) => {
-    //     const confirm = window.confirm("Estás seguro de eliminar esta variación?")
-    //     if (confirm) {
-    //         const confirm2 = window.confirm("¡Esta acción no se puede deshacer!")
-    //         if (confirm2) {
-    //             // await deleteVariation(sku)
-    //             toast.success("Eliminado exitosamente")
-    //             router.refresh()
-    //         }
-    //     } else {
-    //         toast.error("Operación cancelada")
-    //     }
-    // }
 
     return (
         <div className="flex-1 flex flex-col">
@@ -151,14 +129,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                         {isFirst && (
                                             <TableCell
                                                 className="py-2 px-3 text-left w-1/4"
-                                                rowSpan={
-                                                    (
-                                                        currentItems.find(
-                                                            (i) =>
-                                                                i.product.productID === product.productID && i.isFirst,
-                                                        ) as any
-                                                    )?.rowSpan || product.ProductVariations.length
-                                                }
+                                                rowSpan={product.ProductVariations.length}
                                             >
                                                 <MotionItem key={`product-${product.productID}`} delay={index + 2}>
                                                     <div className="flex flex-col relative w-full items-center gap-4">
@@ -479,14 +450,6 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </TooltipContent>
                                             </Tooltip>
 
-                                            {/* TODO: Backend no soporta eliminar variaciones individuales */}
-                                            {/* <div
-                                                title="Eliminar talla"
-                                                className="hidden group-hover:block absolute right-0 top-1/2 -translate-y-1/2"
-                                                onClick={() => handleDeleteVariation(variation.sku)}
-                                            >
-                                                <Trash2 />
-                                            </div> */}
                                         </TableCell>
                                     </TableRow>
                                 )

@@ -7,6 +7,7 @@ export interface IStoreProduct {
     storeID: string
     quantity: number
     priceCostStore: string
+    priceListStore: string
     createdAt: string
     updatedAt: string
     Store: IStore

@@ -1,4 +1,5 @@
 import { IProductVariation } from "../products/IProductVariation"
+import type { IStore } from "../stores/IStore"
 
 export type TransferStatus = "PENDING" | "COMPLETED" | "CANCELLED"
 
@@ -10,6 +11,7 @@ export interface ITransferItem {
     createdAt: string
     updatedAt: string
     variation?: IProductVariation
+    transfer?: ITransfer
 }
 
 export interface ITransfer {
@@ -20,6 +22,8 @@ export interface ITransfer {
     createdAt: string
     updatedAt: string
     items: ITransferItem[]
+    originStore?: IStore
+    destinationStore?: IStore
 }
 
 export interface ICreateTransferPayload {

@@ -8,7 +8,6 @@ import OrderMainInfo from "./OrderMainInfo"
 import StoreInfo from "./StoreInfo"
 import ProductsTable from "./ProductsTable"
 import FinancialSummary from "./FinancialSummary"
-import { deleteOrder } from "@/actions/orders/deleteOrder"
 import { useAuth } from "@/stores/user.store"
 import { Role } from "@/lib/userRoles"
 import { useReactToPrint } from "react-to-print"
@@ -29,21 +28,6 @@ interface Props {
     allProducts: IProduct[]
 }
 
-export type typeField =
-    | "userID"
-    | "createdAt"
-    | "updatedAt"
-    | "storeID"
-    | "total"
-    | "status"
-    | "type"
-    | "discount"
-    | "dte"
-    | "startQuote"
-    | "endQuote"
-    | "expiration"
-    | "expirationPeriod"
-
 export default function OrderDetail({ order, allProducts }: Props) {
     const router = useRouter()
     const { user } = useAuth()
@@ -51,11 +35,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
     // Select specific state from store to minimize re-renders
     const discount = useEditOrderStore((s) => s.discount)
     const total = useEditOrderStore((s) => s.total)
-    const status = useEditOrderStore((s) => s.status)
     const newProducts = useEditOrderStore((s) => s.newProducts)
-
-    // Actions don't change, but good to be explicit/consistent
-    const clearCart = useEditOrderStore((s) => s.actions.clearCart)
 
     // Initialize store
     useOrderInitialization(order)
@@ -117,32 +97,11 @@ export default function OrderDetail({ order, allProducts }: Props) {
             toast.success("Orden actualizada correctamente")
             router.refresh()
         } catch (e) {
-            console.log(e)
             toast.error("Error al actualizar la orden")
         } finally {
             setLoading(false)
         }
     }, [order.purchaseOrderID, router])
-
-    // Handler para eliminar la orden
-    const handleDelete = useCallback(async () => {
-        if (!order) return
-        if (confirm("¿Estás seguro de que quieres anular esta orden?")) {
-            try {
-                setLoading(true)
-                await deleteOrder(order.purchaseOrderID)
-                router.push("/home/invoices")
-                toast.success("Orden anulada correctamente")
-                clearCart()
-                router.refresh()
-            } catch (e) {
-                console.log(e)
-                toast.error("Error al anular la orden")
-            } finally {
-                setLoading(false)
-            }
-        }
-    }, [order, router, clearCart])
 
     return (
         <div className="bg-white min-h-screen dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4">
@@ -235,15 +194,6 @@ export default function OrderDetail({ order, allProducts }: Props) {
                                 {loading ? `Actualizando...` : `Actualizar Orden`}
                             </Button>
                         )}
-                        {/* {isAdmin && (
-                            <Button
-                                disabled={loading || status === "Pagado"}
-                                className=" bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded shadow"
-                                onClick={handleDelete}
-                            >
-                                Eliminar OC
-                            </Button>
-                        )} */}
                     </div>
                 </div>
             </div>

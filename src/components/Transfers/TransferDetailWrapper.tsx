@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ITransfer, ITransferItem } from "@/interfaces/transfers/ITransfer"
+import { ITransfer } from "@/interfaces/transfers/ITransfer"
 import { IProduct } from "@/interfaces/products/IProduct"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Plus, Trash2, CheckCircle2, Loader2, Package, ArrowRight, Search } from "lucide-react"
@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input"
 import { addTransferItem } from "@/actions/transfers/addTransferItem"
 import { completeTransfer } from "@/actions/transfers/completeTransfer"
 import { toast } from "sonner"
-import Image from "next/image"
 import { Label } from "recharts"
 
 interface Props {
@@ -22,7 +21,7 @@ interface Props {
 
 export default function TransferDetailWrapper({ initialTransfer, products }: Props) {
     const router = useRouter()
-    const [transfer, setTransfer] = useState(initialTransfer)
+    const [transfer] = useState(initialTransfer)
     const [loadingComplete, setLoadingComplete] = useState(false)
     const [addingItem, setAddingItem] = useState(false)
 
@@ -105,9 +104,11 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                             Transferencia <span className="text-blue-600">#{transfer.transferID.slice(0, 8)}</span>
                         </h1>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <span>Origen: Tienda {transfer.originStoreID.slice(0, 4)}</span>
+                            <span>Origen: {transfer.originStore?.name || `Tienda ${transfer.originStoreID.slice(0, 4)}`}</span>
                             <ArrowRight size={14} />
-                            <span>Destino: Tienda {transfer.destinationStoreID.slice(0, 4)}</span>
+                            <span>
+                                Destino: {transfer.destinationStore?.name || `Tienda ${transfer.destinationStoreID.slice(0, 4)}`}
+                            </span>
                         </div>
                     </div>
                 </div>

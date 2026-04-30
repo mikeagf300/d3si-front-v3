@@ -72,9 +72,10 @@ export default function StoresTable() {
                     </TableHeader>
                     <TableBody>
                         {stores.map((store) => {
-                            const gestores = users.filter((user) =>
-                                user.Stores.some((s) => s.storeID === store.storeID)
-                            )
+                            const gestores =
+                                users.filter((user) =>
+                                    user.userStores?.some((relation) => relation.store?.storeID === store.storeID),
+                                ) || []
 
                             return (
                                 <TableRow key={store.storeID} className="hover:bg-gray-50 dark:hover:bg-slate-700">

@@ -1,0 +1,413 @@
+{
+    "CreateStoreMonthlyTargetDto": {
+        "type": "object",
+        "properties": {
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda a la que pertenece la meta mensual",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            },
+            "period": {
+                "type": "string",
+                "description": "Mes objetivo en formato ISO. Se normaliza al primer día del mes.",
+                "example": "2026-04-01"
+            },
+            "targetAmount": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Monto meta de ventas para ese mes",
+                "example": 25000000
+            }
+        },
+        "required": ["storeID", "period", "targetAmount"]
+    },
+    "UpsertStoreMonthlyTargetDto": {
+        "type": "object",
+        "properties": {
+            "period": {
+                "type": "string",
+                "description": "Periodo objetivo como YYYY/MM o YYYY/MM/DD. Si se omite, se usa el mes actual",
+                "example": "2026/04"
+            },
+            "targetAmount": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Monto meta de ventas para ese mes",
+                "example": 26000000
+            }
+        },
+        "required": ["targetAmount"]
+    },
+    "UpdateStoreMonthlyTargetDto": {
+        "type": "object",
+        "properties": {
+            "targetAmount": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Monto meta de ventas para ese mes",
+                "example": 26000000
+            }
+        }
+    },
+    "StoreMonthlyTarget": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "string"
+            },
+            "store": {
+                "$ref": "#/components/schemas/Store"
+            },
+            "period": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "targetAmount": {
+                "type": "number"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": ["id", "store", "period", "targetAmount", "createdAt", "updatedAt"]
+    },
+    "Store": {
+        "type": "object",
+        "properties": {
+            "storeID": {
+                "type": "string"
+            },
+            "location": {
+                "type": "string"
+            },
+            "rut": {
+                "type": "string"
+            },
+            "address": {
+                "type": "string"
+            },
+            "phone": {
+                "type": "string"
+            },
+            "city": {
+                "type": "string"
+            },
+            "storeImg": {
+                "type": "string",
+                "nullable": true
+            },
+            "email": {
+                "type": "string"
+            },
+            "name": {
+                "type": "string"
+            },
+            "type": {
+                "enum": ["central", "franchise", "consignment", "third_party"],
+                "type": "string"
+            },
+            "isCentralStore": {
+                "type": "boolean"
+            },
+            "userStores": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/UserStore"
+                }
+            },
+            "expenses": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/Expense"
+                }
+            },
+            "monthlyTargets": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/StoreMonthlyTarget"
+                }
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": [
+            "storeID",
+            "location",
+            "rut",
+            "address",
+            "phone",
+            "city",
+            "storeImg",
+            "email",
+            "name",
+            "type",
+            "isCentralStore",
+            "userStores",
+            "expenses",
+            "monthlyTargets",
+            "createdAt",
+            "updatedAt"
+        ]
+    },
+    "UserStore": {
+        "type": "object",
+        "properties": {
+            "userStoreID": {
+                "type": "string"
+            },
+            "user": {
+                "$ref": "#/components/schemas/User"
+            },
+            "store": {
+                "$ref": "#/components/schemas/Store"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": ["userStoreID", "user", "store", "createdAt", "updatedAt"]
+    },
+    "CreateStoreDto": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Comuna o sector de la tienda",
+                "example": "Providencia"
+            },
+            "rut": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Rol Único Tributario de la tienda",
+                "example": "76283592-1"
+            },
+            "address": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Dirección física de la tienda",
+                "example": "Av. Siempre Viva 742"
+            },
+            "phone": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Número de teléfono de contacto",
+                "example": "+56912345678"
+            },
+            "city": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Ciudad donde se encuentra la tienda",
+                "example": "Santiago"
+            },
+            "storeImg": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "uri",
+                "description": "URL de la imagen de la tienda",
+                "example": "https://ejemplo.com/tienda_img.jpg",
+                "nullable": true
+            },
+            "email": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "email",
+                "description": "Correo electrónico de contacto (debe ser único y requerido)",
+                "example": "contacto@tienda.com"
+            },
+            "name": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Nombre de la tienda (debe ser único)",
+                "example": "Tienda Principal"
+            },
+            "type": {
+                "enum": ["central", "franchise", "consignment", "third_party"],
+                "type": "string",
+                "description": "Tipo de tienda según el negocio",
+                "default": "third_party"
+            },
+            "isCentralStore": {
+                "type": "boolean",
+                "description": "Indica si es una tienda central (valor por defecto: false)",
+                "example": false,
+                "default": false
+            }
+        },
+        "required": ["location", "rut", "address", "phone", "city", "email", "name", "type"]
+    },
+    "UpdateStoreDto": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Comuna o sector de la tienda",
+                "example": "Providencia"
+            },
+            "rut": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Rol Único Tributario de la tienda",
+                "example": "76283592-1"
+            },
+            "address": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Dirección física de la tienda",
+                "example": "Av. Siempre Viva 742"
+            },
+            "phone": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Número de teléfono de contacto",
+                "example": "+56912345678"
+            },
+            "city": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Ciudad donde se encuentra la tienda",
+                "example": "Santiago"
+            },
+            "storeImg": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "uri",
+                "description": "URL de la imagen de la tienda",
+                "example": "https://ejemplo.com/nueva_imagen.jpg",
+                "nullable": true
+            },
+            "email": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "email",
+                "description": "Correo electrónico de contacto (debe ser único y requerido)",
+                "example": "contacto@tienda.com"
+            },
+            "name": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Nombre de la tienda (debe ser único)",
+                "example": "Tienda Principal"
+            },
+            "type": {
+                "enum": ["central", "franchise", "consignment", "third_party"],
+                "type": "string",
+                "description": "Tipo de tienda según el negocio",
+                "default": "third_party"
+            },
+            "isCentralStore": {
+                "type": "boolean",
+                "description": "Indica si es una tienda central (valor por defecto: false)",
+                "example": false,
+                "default": false
+            }
+        }
+    },
+    "CreateUserstoreDto": {
+        "type": "object",
+        "properties": {
+            "userID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID del usuario a asignar a la tienda",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            },
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda donde se asignará el usuario",
+                "example": "123e4567-e89b-12d3-a456-426614174001"
+            }
+        },
+        "required": ["userID", "storeID"]
+    },
+    "StoreProduct": {
+        "type": "object",
+        "properties": {
+            "storeProductID": {
+                "type": "string"
+            },
+            "store": {
+                "$ref": "#/components/schemas/Store"
+            },
+            "variation": {
+                "$ref": "#/components/schemas/ProductVariation"
+            },
+            "stock": {
+                "type": "number",
+                "deprecated": true
+            },
+            "priceCost": {
+                "type": "number"
+            },
+            "priceList": {
+                "type": "number"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "specialOffers": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/SpecialOffer"
+                }
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": [
+            "storeProductID",
+            "store",
+            "variation",
+            "stock",
+            "priceCost",
+            "createdAt",
+            "specialOffers",
+            "updatedAt"
+        ]
+    },
+    "UpdateStoreProductDto": {
+        "type": "object",
+        "properties": {
+            "stock": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Cantidad de stock disponible",
+                "example": 100
+            },
+            "priceCost": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Precio de costo del producto para la tienda",
+                "example": 10.5
+            },
+            "priceList": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Precio de venta al público en la tienda",
+                "example": 20
+            }
+        }
+    }
+}

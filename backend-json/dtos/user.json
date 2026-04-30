@@ -1,0 +1,61 @@
+{
+    "User": {
+        "type": "object",
+        "properties": {
+            "userID": {
+                "type": "string"
+            },
+            "email": {
+                "type": "string"
+            },
+            "name": {
+                "type": "string"
+            },
+            "role": {
+                "enum": ["admin", "store_manager", "consignado", "tercero"],
+                "type": "string"
+            },
+            "userImg": {
+                "type": "string",
+                "nullable": true
+            },
+            "password": {
+                "type": "string"
+            },
+            "userStores": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/UserStore"
+                }
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": ["userID", "email", "name", "role", "userImg", "password", "userStores", "createdAt", "updatedAt"]
+    },
+    "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string"
+            },
+            "role": {
+                "type": "string",
+                "enum": ["admin", "store_manager", "consignado", "tercero"]
+            },
+            "userImg": {
+                "type": "string"
+            },
+            "password": {
+                "type": "string",
+                "minLength": 6
+            }
+        }
+    }
+}

@@ -1,6 +1,7 @@
 import { API_URL } from "@/lib/enviroments"
 import { fetcher } from "@/lib/fetcher"
 import { IUser } from "@/interfaces/users/IUser"
+import { normalizeUser } from "@/lib/normalize-user-store"
 
 /**
  * Obtiene todos los usuarios desde la API.
@@ -13,5 +14,6 @@ import { IUser } from "@/interfaces/users/IUser"
  */
 
 export const getAllUsers = async (options?: RequestInit): Promise<IUser[]> => {
-    return await fetcher<IUser[]>(`${API_URL}/users`, options)
+    const users = await fetcher<IUser[]>(`${API_URL}/users`, options)
+    return Array.isArray(users) ? users.map(normalizeUser) : []
 }

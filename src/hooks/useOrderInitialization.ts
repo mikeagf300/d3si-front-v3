@@ -12,8 +12,6 @@ export const useOrderInitialization = (order: IPurchaseOrder) => {
     // Carga la orden en el store global de zustand
     useEffect(() => {
         clearCart()
-        const { PurchaseOrderItems, ...restOrder } = order
-
         // Mapeo manual de campos para compatibilidad con el store existente
         updateOrderStringField("orderID", order.purchaseOrderID)
         updateOrderStringField("storeID", order.storeID)

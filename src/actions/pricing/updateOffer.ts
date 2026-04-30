@@ -7,7 +7,7 @@ import { IUpdateOfferPayload, IOffer } from "@/interfaces/pricing/IPricing"
  * POST /pricing/offers/:id
  */
 export async function updateOffer(offerID: string, payload: IUpdateOfferPayload): Promise<IOffer> {
-    return await fetcher<IOffer>(`${API_URL}/pricing/offers/${offerID}`, {
+    return fetcher<IOffer>(`${API_URL}/pricing/offers/${offerID}`, {
         method: "POST",
         body: JSON.stringify(payload),
     })

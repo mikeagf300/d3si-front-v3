@@ -76,12 +76,14 @@ export default function TransfersClientWrapper({ initialTransfers, stores }: Pro
                                         <TableCell className="font-mono text-xs text-gray-500">
                                             #{t.transferID.slice(0, 8)}
                                         </TableCell>
-                                        <TableCell className="font-medium">{getStoreName(t.originStoreID)}</TableCell>
+                                        <TableCell className="font-medium">
+                                            {t.originStore?.name || getStoreName(t.originStoreID)}
+                                        </TableCell>
                                         <TableCell className="text-center">
                                             <ArrowRightLeft size={14} className="mx-auto text-blue-300" />
                                         </TableCell>
                                         <TableCell className="font-medium">
-                                            {getStoreName(t.destinationStoreID)}
+                                            {t.destinationStore?.name || getStoreName(t.destinationStoreID)}
                                         </TableCell>
                                         <TableCell className="text-sm text-gray-500">
                                             {new Date(t.createdAt).toLocaleDateString()}

@@ -7,7 +7,7 @@ import { IPriceHistoryItem } from "@/interfaces/pricing/IPricing"
  * GET /pricing/history?storeID=string&variationID=string
  */
 export async function getPriceHistory(storeID: string, variationID: string): Promise<IPriceHistoryItem[]> {
-    return await fetcher<IPriceHistoryItem[]>(
+    return fetcher<IPriceHistoryItem[]>(
         `${API_URL}/pricing/history?storeID=${storeID}&variationID=${variationID}`,
     )
 }

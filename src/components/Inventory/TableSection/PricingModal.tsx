@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { IProductVariation, IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { IProduct } from "@/interfaces/products/IProduct"
-import { IPriceHistoryItem, IOffer, IPriceCheck, DiscountType } from "@/interfaces/pricing/IPricing"
+import { IPriceHistoryItem, IPriceCheck, DiscountType } from "@/interfaces/pricing/IPricing"
 import { getPriceHistory } from "@/actions/pricing/getPriceHistory"
 import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
 import { updatePrice } from "@/actions/pricing/updatePrice"
@@ -34,6 +34,15 @@ const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" })
 
 type Tab = "price-check" | "history" | "offer"
+
+const buildOfferForm = (offer?: IPriceCheck["activeOffer"]) => ({
+    discountType: offer?.discountType ?? ("PERCENTAGE" as DiscountType),
+    value: offer?.value?.toString() ?? "",
+    description: offer?.description ?? "",
+    startDate: offer?.startDate ? offer.startDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    endDate: offer?.endDate ? offer.endDate.slice(0, 10) : "",
+    isActive: offer?.isActive ?? true,
+})
 
 interface PricingModalProps {
     isOpen: boolean
@@ -62,16 +71,14 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
     const [savingPrice, setSavingPrice] = useState(false)
 
     // ── Oferta ───────────────────────────────────────────────────────────────
-    const [offerForm, setOfferForm] = useState({
-        discountType: "PERCENTAGE" as DiscountType,
-        value: "",
-        description: "",
-        startDate: new Date().toISOString().slice(0, 10),
-        endDate: "",
-        isActive: true,
-    })
+    const [offerForm, setOfferForm] = useState(buildOfferForm())
     const [savingOffer, setSavingOffer] = useState(false)
     const hasOffer = !!priceCheck?.activeOffer
+
+    useEffect(() => {
+        if (!isOpen || tab !== "offer") return
+        setOfferForm(buildOfferForm(priceCheck?.activeOffer))
+    }, [isOpen, tab, priceCheck?.activeOffer])
 
     // ── Carga inicial según tab ──────────────────────────────────────────────
     useEffect(() => {
@@ -90,7 +97,7 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                 .catch(() => toast.error("No se pudo obtener el historial"))
                 .finally(() => setLoadingHistory(false))
         }
-    }, [isOpen, tab])
+    }, [isOpen, tab, storeProduct?.storeProductID, storeID, variation.variationID])
 
     // ── Guardar actualización de precio ──────────────────────────────────────
     const handleUpdatePrice = async () => {
@@ -133,6 +140,7 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
         }
         setSavingOffer(true)
         try {
+            const activeOffer = priceCheck?.activeOffer
             const payload = {
                 storeProductID: storeProduct.storeProductID,
                 discountType: offerForm.discountType,
@@ -141,9 +149,11 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                 startDate: new Date(offerForm.startDate).toISOString(),
                 endDate: offerForm.endDate ? new Date(offerForm.endDate).toISOString() : undefined,
                 isActive: offerForm.isActive,
+                scope: activeOffer?.scope,
+                exclusive: activeOffer?.exclusive,
             }
-            if (hasOffer && priceCheck!.activeOffer!.offerID) {
-                await updateOffer(priceCheck!.activeOffer!.offerID, payload)
+            if (activeOffer?.offerID) {
+                await updateOffer(activeOffer.offerID, payload)
                 toast.success("Oferta actualizada correctamente")
             } else {
                 await createOffer(payload)

@@ -1,5 +1,6 @@
 "use client"
 import { useTienda } from "@/stores/tienda.store"
+import { logout as logoutSession } from "@/actions/auth/authActions"
 import { useAuth } from "@/stores/user.store"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -12,9 +13,10 @@ export default function Navbar() {
     const { storeSelected } = useTienda()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await logoutSession()
         logout()
-        router.push("/")
+        router.replace("/login")
         setIsMenuOpen(false)
     }
 

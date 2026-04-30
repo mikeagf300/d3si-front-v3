@@ -7,7 +7,7 @@ import { IUpdatePricePayload, IUpdatePriceResponse } from "@/interfaces/pricing/
  * POST /pricing/update
  */
 export async function updatePrice(payload: IUpdatePricePayload): Promise<IUpdatePriceResponse> {
-    return await fetcher<IUpdatePriceResponse>(`${API_URL}/pricing/update`, {
+    return fetcher<IUpdatePriceResponse>(`${API_URL}/pricing/update`, {
         method: "POST",
         body: JSON.stringify(payload),
     })

@@ -229,8 +229,6 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
             },
         }
 
-        console.log("AnularSale payload:", submissionData)
-
         startTransition(async () => {
             try {
                 const result = await anularSale(submissionData)
@@ -256,7 +254,8 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
                     <DialogHeader>
                         <DialogTitle>Anular Venta</DialogTitle>
                         <DialogDescription>
-                            Completa el formulario para procesar la anulación de la venta.
+                            Completa el formulario para registrar la anulación. El backend documentado solo confirma
+                            el cambio de estado de la venta por ahora.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-4 py-4">

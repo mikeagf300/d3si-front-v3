@@ -113,7 +113,6 @@ export function ExcelImporter({ categories }: { categories: ICategory[] }) {
 
                 toast.success("Productos importados desde Excel.")
             } catch (err) {
-                console.log(err)
                 toast.error("Error al procesar el archivo Excel.")
             }
         },

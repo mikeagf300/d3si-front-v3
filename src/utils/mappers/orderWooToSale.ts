@@ -24,6 +24,7 @@ export const mapOrderToSaleBasic = (order: WooCommerceOrder): ISaleResponse => {
         updatedAt: order.date_created, // no hay date_modified
         StoreProduct: {} as any,
         Users: [],
+        userStores: [],
     }
 
     const saleProducts = order.line_items.map((item) => mapWooLineItemToISaleProduct(item, order.date_created))

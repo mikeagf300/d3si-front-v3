@@ -7,7 +7,7 @@ import { ICreateOfferPayload, IOffer } from "@/interfaces/pricing/IPricing"
  * POST /pricing/offers
  */
 export async function createOffer(payload: ICreateOfferPayload): Promise<IOffer> {
-    return await fetcher<IOffer>(`${API_URL}/pricing/offers`, {
+    return fetcher<IOffer>(`${API_URL}/pricing/offers`, {
         method: "POST",
         body: JSON.stringify(payload),
     })

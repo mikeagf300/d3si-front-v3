@@ -1,0 +1,251 @@
+{
+    "/users": {
+        "post": {
+            "operationId": "UsersController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateUserDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "El usuario ha sido creado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "User"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "Solicitud incorrecta."
+                },
+                "500": {
+                    "description": "Error interno del servidor."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "User"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear un nuevo usuario",
+            "tags": ["Usuarios"]
+        },
+        "get": {
+            "operationId": "UsersController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de todos los usuarios.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "User"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "User"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todos los usuarios",
+            "tags": ["Usuarios"]
+        }
+    },
+    "/users/{id}/stores": {
+        "get": {
+            "operationId": "UsersController_findStoresByUserId",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del usuario",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Lista de tiendas del usuario.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Store"
+                                }
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Usuario no encontrado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todas las tiendas de un usuario",
+            "tags": ["Usuarios"]
+        }
+    },
+    "/users/{email}": {
+        "get": {
+            "operationId": "UsersController_findOne",
+            "parameters": [
+                {
+                    "name": "email",
+                    "required": true,
+                    "in": "path",
+                    "description": "Email del usuario a buscar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Usuario encontrado.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "User"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Usuario no encontrado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "User"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Buscar un usuario por su email",
+            "tags": ["Usuarios"]
+        }
+    },
+    "/users/{id}": {
+        "patch": {
+            "operationId": "UsersController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del usuario a actualizar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateUserDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "El usuario ha sido actualizado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "User"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Usuario no encontrado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "User"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar un usuario por su ID",
+            "tags": ["Usuarios"]
+        },
+        "delete": {
+            "operationId": "UsersController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del usuario a eliminar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "204": {
+                    "description": "El usuario ha sido eliminado exitosamente."
+                },
+                "404": {
+                    "description": "Usuario no encontrado."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Eliminar un usuario por su ID",
+            "tags": ["Usuarios"]
+        }
+    }
+}

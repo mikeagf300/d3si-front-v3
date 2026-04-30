@@ -1,0 +1,212 @@
+{
+    "/expenses": {
+        "post": {
+            "description": "Crea un registro de gasto asociado a una tienda, incluyendo monto, fecha y tipo de gasto.",
+            "operationId": "ExpensesController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateExpenseDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "El gasto ha sido creado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Expense"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "Datos de entrada inválidos."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Expense"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Registrar un nuevo gasto",
+            "tags": ["Gestión de Gastos"]
+        },
+        "get": {
+            "description": "Obtiene una lista completa de todos los gastos registrados en el sistema.",
+            "operationId": "ExpensesController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de todos los gastos recuperada con éxito.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Expense"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Expense"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Consultar todos los gastos",
+            "tags": ["Gestión de Gastos"]
+        }
+    },
+    "/expenses/{id}": {
+        "get": {
+            "description": "Recupera la información detallada de un gasto específico utilizando su identificador único.",
+            "operationId": "ExpensesController_findOne",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "Identificador único del gasto (UUID)",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Gasto encontrado y devuelto con éxito.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Expense"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Gasto no encontrado en el sistema."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Expense"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Consultar un gasto por su ID",
+            "tags": ["Gestión de Gastos"]
+        },
+        "patch": {
+            "description": "Modifica los datos de un gasto existente identificado por su ID.",
+            "operationId": "ExpensesController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del gasto a actualizar (UUID)",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateExpenseDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "El gasto ha sido actualizado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Expense"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Gasto no encontrado para actualizar."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar la información de un gasto",
+            "tags": ["Gestión de Gastos"]
+        },
+        "delete": {
+            "description": "Remueve permanentemente un gasto del sistema mediante su identificador.",
+            "operationId": "ExpensesController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del gasto a eliminar (UUID)",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "204": {
+                    "description": "El gasto ha sido eliminado exitosamente."
+                },
+                "404": {
+                    "description": "Gasto no encontrado para eliminar."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Expense"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Eliminar un registro de gasto",
+            "tags": ["Gestión de Gastos"]
+        }
+    }
+}

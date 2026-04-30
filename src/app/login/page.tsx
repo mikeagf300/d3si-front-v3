@@ -1,44 +1,15 @@
-"use client"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { AUTH_COOKIE_NAME } from "@/lib/auth-session"
+import LoginScreen from "@/components/Login/LoginScreen"
 
-import { motion } from "framer-motion"
-import LoginForm from "@/components/Login/LoginForm"
-import { useAuth } from "@/stores/user.store"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useTienda } from "@/stores/tienda.store"
-import { toast } from "sonner"
+export default async function LoginPage() {
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get(AUTH_COOKIE_NAME)?.value
 
-export default function LoginPage() {
-    const { user } = useAuth()
-    const { storeSelected } = useTienda()
-    const router = useRouter()
-
-    useEffect(() => {
-        if (user && storeSelected) {
-            toast("Sesión guardada, redirgiendo...")
-            router.push(`/home?storeID=${storeSelected.storeID}`)
-        }
-    }, [user, storeSelected, router])
-
-    const handleClearStorage = () => {
-        localStorage.clear()
-        document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
-        window.location.reload()
+    if (authToken) {
+        redirect("/home")
     }
 
-    return (
-        <main className=" flex flex-col items-center justify-center px-4">
-            <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md dark:bg-slate-700 bg-white rounded-2xl shadow-2xl p-8"
-            >
-                <h1 className="text-2xl font-bold dark:text-white text-gray-800 mb-2 text-center">Iniciar sesión</h1>
-                <p className="text-sm text-gray-500 mb-6 text-center">Acceso administrativo a D3SI Retail</p>
-                <LoginForm />
-                <p className="text-xs text-gray-400 text-center mt-6">© 2025 D3SI. Todos los derechos reservados.</p>
-            </motion.div>
-        </main>
-    )
+    return <LoginScreen />
 }

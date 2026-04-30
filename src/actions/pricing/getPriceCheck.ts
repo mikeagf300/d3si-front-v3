@@ -7,5 +7,5 @@ import { IPriceCheck } from "@/interfaces/pricing/IPricing"
  * GET /pricing/price-check/:storeProductID
  */
 export async function getPriceCheck(storeProductID: string): Promise<IPriceCheck> {
-    return await fetcher<IPriceCheck>(`${API_URL}/pricing/price-check/${storeProductID}`)
+    return fetcher<IPriceCheck>(`${API_URL}/pricing/price-check/${storeProductID}`)
 }

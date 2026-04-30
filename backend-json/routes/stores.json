@@ -1,0 +1,788 @@
+{
+    "/stores": {
+        "post": {
+            "description": "Registra una nueva tienda en el sistema. Puede ser de tipo central, franquicia, consignación o terceros.",
+            "operationId": "StoresController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateStoreDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "Tienda creada exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Store"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "Datos inválidos o email/nombre duplicado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Store"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear una nueva tienda",
+            "tags": ["Tiendas"]
+        },
+        "get": {
+            "description": "Retorna el listado completo de tiendas registradas en el sistema.",
+            "operationId": "StoresController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de tiendas.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Store"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Store"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todas las tiendas",
+            "tags": ["Tiendas"]
+        }
+    },
+    "/stores/{id}/users": {
+        "get": {
+            "operationId": "StoresController_findUsersByStoreId",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Lista de usuarios de la tienda.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "User"
+                                }
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Tienda no encontrada."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todos los usuarios de una tienda",
+            "tags": ["Tiendas"]
+        }
+    },
+    "/stores/{id}": {
+        "get": {
+            "description": "Retorna la información detallada de una tienda específica.",
+            "operationId": "StoresController_findOne",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Tienda encontrada.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Store"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Tienda no encontrada."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Store"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener una tienda por ID",
+            "tags": ["Tiendas"]
+        },
+        "patch": {
+            "description": "Modifica los datos de una tienda existente (nombre, dirección, teléfono, etc.).",
+            "operationId": "StoresController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateStoreDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Tienda actualizada exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Store"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Tienda no encontrada."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Store"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar información de una tienda",
+            "tags": ["Tiendas"]
+        },
+        "delete": {
+            "description": "Elimina permanentemente una tienda del sistema.",
+            "operationId": "StoresController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Tienda eliminada exitosamente."
+                },
+                "404": {
+                    "description": "Tienda no encontrada."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Eliminar una tienda",
+            "tags": ["Tiendas"]
+        }
+    },
+    "/userstores": {
+        "post": {
+            "description": "Crea una relación entre un usuario y una tienda, permitiendo que el usuario tenga acceso a esa tienda.",
+            "operationId": "UserstoresController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateUserstoreDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "Usuario asignado a la tienda exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "UserStore"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "Datos inválidos."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "UserStore"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Asignar un usuario a una tienda",
+            "tags": ["Usuarios de las Tiendas"]
+        },
+        "get": {
+            "description": "Retorna el listado completo de asignaciones entre usuarios y tiendas.",
+            "operationId": "UserstoresController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de relaciones usuario-tienda.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "UserStore"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "UserStore"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todas las relaciones usuario-tienda",
+            "tags": ["Usuarios de las Tiendas"]
+        }
+    },
+    "/userstores/{id}": {
+        "get": {
+            "description": "Retorna todas las tiendas a las que un usuario tiene acceso.",
+            "operationId": "UserstoresController_findOne",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la relación usuario-tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Lista de tiendas del usuario.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "UserStore"
+                                }
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Usuario no encontrado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "UserStore"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener tiendas de un usuario",
+            "tags": ["Usuarios de las Tiendas"]
+        },
+        "delete": {
+            "description": "Elimina la relación entre un usuario y una tienda, revocando el acceso del usuario a esa tienda.",
+            "operationId": "UserstoresController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la relación usuario-tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Asignación eliminada exitosamente."
+                },
+                "404": {
+                    "description": "Asignación no encontrada."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Eliminar asignación usuario-tienda",
+            "tags": ["Usuarios de las Tiendas"]
+        }
+    },
+    "/storeproduct/transfer": {
+        "post": {
+            "description": "Realiza una transferencia gratuita de productos desde el stock central hacia una tienda específica. Útil para movimientos internos sin transacción comercial.",
+            "operationId": "StoreProductController_transferStock",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "TransferStockDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "Transferencia realizada exitosamente."
+                },
+                "400": {
+                    "description": "Stock insuficiente o datos inválidos."
+                },
+                "404": {
+                    "description": "Tienda o Producto no encontrado."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Transferir stock de la central a una tienda",
+            "tags": ["Productos de la Tienda"]
+        }
+    },
+    "/storeproduct/inventory": {
+        "get": {
+            "description": "Obtiene el listado completo de productos en stock de una tienda específica, incluyendo cantidades, costos de compra y precios de venta.",
+            "operationId": "StoreProductController_getStoreInventory",
+            "parameters": [
+                {
+                    "name": "storeID",
+                    "required": true,
+                    "in": "query",
+                    "description": "ID de la tienda para consultar inventario",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Inventario de la tienda.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Product"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Product"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Consultar inventario de una tienda",
+            "tags": ["Productos de la Tienda"]
+        }
+    },
+    "/storeproduct/{id}": {
+        "patch": {
+            "description": "Permite actualizar el stock, precio de costo y precio de venta de un producto en una tienda específica usando su StoreProductID.",
+            "operationId": "StoreProductController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID del StoreProduct a actualizar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateStoreProductDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Producto de tienda actualizado exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreProduct"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Producto de tienda no encontrado."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreProduct"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar un producto en tienda (Inventario/Precios)",
+            "tags": ["Productos de la Tienda"]
+        }
+    },
+    "/store-monthly-targets": {
+        "post": {
+            "operationId": "StoreMonthlyTargetsController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateStoreMonthlyTargetDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "Meta mensual creada exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreMonthlyTarget"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreMonthlyTarget"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear una meta mensual para una tienda",
+            "tags": ["Metas Mensuales de Tienda"]
+        },
+        "get": {
+            "operationId": "StoreMonthlyTargetsController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de metas mensuales.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "StoreMonthlyTarget"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "StoreMonthlyTarget"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Listar todas las metas mensuales",
+            "tags": ["Metas Mensuales de Tienda"]
+        }
+    },
+    "/store-monthly-targets/{storeID}": {
+        "get": {
+            "operationId": "StoreMonthlyTargetsController_getByStore",
+            "parameters": [
+                {
+                    "name": "storeID",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "period",
+                    "required": false,
+                    "in": "path",
+                    "description": "Periodo opcional. Si no se envía, se usa el mes actual. Formatos aceptados: YYYY-MM-DD, YYYY-MM, YYYY/MM/DD, YYYY/MM",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Meta mensual (0 si no existe)."
+                },
+                "404": {
+                    "description": "Tienda no encontrada."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener la meta mensual de una tienda por ID. period opcional: YYYY-MM-DD, YYYY-MM o YYYY/MM/DD, YYYY/MM",
+            "tags": ["Metas Mensuales de Tienda"]
+        },
+        "post": {
+            "operationId": "StoreMonthlyTargetsController_upsert",
+            "parameters": [
+                {
+                    "name": "storeID",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la tienda",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpsertStoreMonthlyTargetDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Meta creada o actualizada.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreMonthlyTarget"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreMonthlyTarget"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear o actualizar la meta mensual para la tienda en el periodo dado (por defecto mes actual).",
+            "tags": ["Metas Mensuales de Tienda"]
+        }
+    },
+    "/store-monthly-targets/{id}": {
+        "patch": {
+            "description": "Solo permite editar metas del mes actual o de meses futuros.",
+            "operationId": "StoreMonthlyTargetsController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la meta mensual",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateStoreMonthlyTargetDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Meta mensual actualizada exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreMonthlyTarget"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "La meta pertenece a un mes pasado o el payload es inválido."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "StoreMonthlyTarget"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Actualizar una meta mensual",
+            "tags": ["Metas Mensuales de Tienda"]
+        },
+        "delete": {
+            "description": "Solo permite eliminar metas del mes actual o de meses futuros.",
+            "operationId": "StoreMonthlyTargetsController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la meta mensual",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "204": {
+                    "description": "Meta mensual eliminada exitosamente."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Eliminar una meta mensual",
+            "tags": ["Metas Mensuales de Tienda"]
+        }
+    }
+}
