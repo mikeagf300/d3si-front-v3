@@ -1,9 +1,18 @@
 import type { ICategory } from "@/interfaces/categories/ICategory"
 import type { IProduct } from "@/interfaces/products/IProduct"
 import type { IProductVariation, IStoreProduct } from "@/interfaces/products/IProductVariation"
+import type { IOffer } from "@/interfaces/pricing/IPricing"
 import type { IStore } from "@/interfaces/stores/IStore"
 import { pickArray, pickFirst, toNumber, toStringValue } from "./normalize-helpers"
 import { normalizeStore } from "./normalize-user-store"
+
+type RawOffer = Partial<IOffer> & {
+    applied?: boolean
+    source?: string
+    previousPrice?: number
+    resultingPrice?: number
+    priority?: number
+}
 
 export type RawStoreProduct = {
     storeProductID?: string
@@ -12,6 +21,10 @@ export type RawStoreProduct = {
     stock?: number
     priceCost?: string | number
     priceList?: string | number
+    finalPrice?: number
+    discountApplied?: boolean
+    activeOffer?: RawOffer | null
+    specialOffers?: RawOffer[]
     createdAt?: string
     updatedAt?: string
     store?: IStore | null
@@ -53,6 +66,37 @@ const normalizeStoreProduct = (raw: RawStoreProduct): IStoreProduct => ({
     quantity: raw.stock ?? 0,
     priceCostStore: toStringValue(raw.priceCost),
     priceListStore: toStringValue(pickFirst(raw.priceList, raw.priceCost)),
+    finalPrice: raw.finalPrice,
+    discountApplied: raw.discountApplied,
+    activeOffer: raw.activeOffer
+        ? {
+              ...raw.activeOffer,
+              offerID: raw.activeOffer.offerID ?? "",
+              storeProductID: raw.activeOffer.storeProductID ?? raw.storeProductID ?? "",
+              discountType: raw.activeOffer.discountType ?? "PERCENTAGE",
+              value: raw.activeOffer.value ?? 0,
+              startDate: raw.activeOffer.startDate ?? "",
+              isActive: raw.activeOffer.isActive ?? false,
+              createdAt: raw.activeOffer.createdAt ?? "",
+              updatedAt: raw.activeOffer.updatedAt ?? "",
+              applied: raw.activeOffer.applied,
+              source: raw.activeOffer.source,
+              previousPrice: raw.activeOffer.previousPrice,
+              resultingPrice: raw.activeOffer.resultingPrice,
+              priority: raw.activeOffer.priority,
+          }
+        : null,
+    specialOffers: pickArray(raw.specialOffers).map((offer) => ({
+        ...offer,
+        offerID: offer.offerID ?? "",
+        storeProductID: offer.storeProductID ?? raw.storeProductID ?? "",
+        discountType: offer.discountType ?? "PERCENTAGE",
+        value: offer.value ?? 0,
+        startDate: offer.startDate ?? "",
+        isActive: offer.isActive ?? false,
+        createdAt: offer.createdAt ?? "",
+        updatedAt: offer.updatedAt ?? "",
+    })),
     createdAt: raw.createdAt ?? "",
     updatedAt: raw.updatedAt ?? "",
     Store: normalizeStore(pickFirst(raw.store, raw.Store) ?? {}),

@@ -70,6 +70,38 @@
         }
     },
     "/pricing/offers": {
+        "get": {
+            "operationId": "PricingController_getOffers",
+            "parameters": [
+                {
+                    "name": "storeProductID",
+                    "required": false,
+                    "in": "query",
+                    "description": "Filtra las ofertas por producto de tienda",
+                    "schema": {
+                        "format": "uuid",
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "SpecialOffer"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Listar todas las ofertas especiales o filtrar por producto",
+            "tags": ["Precios de productos"]
+        },
         "post": {
             "operationId": "PricingController_createOffer",
             "parameters": [],

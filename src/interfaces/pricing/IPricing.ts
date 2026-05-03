@@ -1,5 +1,5 @@
 export type PriceType = "LIST" | "COST"
-export type DiscountType = "PERCENTAGE" | "FIXED_PRICE"
+export type DiscountType = "PERCENTAGE" | "FIXED_AMOUNT" | "FIXED_PRICE"
 export type DiscountScope = "UNIT" | "TOTAL"
 
 // ─── Actualización de precio ──────────────────────────────────────────────────
@@ -63,6 +63,39 @@ export interface IOffer {
     exclusive?: boolean
     createdAt: string
     updatedAt: string
+}
+
+export interface ISpecialOfferStoreProductVariation {
+    variationID: string
+    size?: string
+    sizeNumber?: string
+    color?: string
+    product?: {
+        productID: string
+        name: string
+        image?: string
+        description?: string
+    }
+}
+
+export interface ISpecialOfferStoreProductStore {
+    storeID: string
+    name: string
+}
+
+export interface ISpecialOfferStoreProduct {
+    storeProductID: string
+    priceList?: number
+    priceCost?: number
+    store?: ISpecialOfferStoreProductStore
+    Store?: ISpecialOfferStoreProductStore
+    variation?: ISpecialOfferStoreProductVariation
+    variationID?: string
+}
+
+export interface ISpecialOffer extends Omit<IOffer, "storeProductID"> {
+    storeProductID?: string
+    storeProduct?: ISpecialOfferStoreProduct | null
 }
 
 // ─── Price Check (precio final con oferta) ────────────────────────────────────

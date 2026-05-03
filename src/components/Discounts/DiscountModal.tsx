@@ -6,17 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { DiscountScope, DiscountType, ICreateOfferPayload } from "@/interfaces/pricing/IPricing"
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import { DiscountScope, DiscountType, ICreateOfferPayload, ISpecialOffer } from "@/interfaces/pricing/IPricing"
 import { createOffer } from "@/actions/pricing/createOffer"
+import { updateOffer } from "@/actions/pricing/updateOffer"
+import { normalize } from "@/utils/product-form.utils"
 import { toast } from "sonner"
-import { BadgePercent, Loader2, Store, Sparkles } from "lucide-react"
+import { BadgePercent, Check, ChevronDown, Loader2, Store, Sparkles } from "lucide-react"
 
 export type DiscountStoreProductOption = {
     storeProductID: string
@@ -32,7 +36,9 @@ interface DiscountModalProps {
     onClose: () => void
     options: DiscountStoreProductOption[]
     initialStoreProductID?: string
+    initialOffer?: ISpecialOffer | null
     onOfferCreated?: (storeProductID: string) => void
+    onOfferUpdated?: (storeProductID: string) => void
 }
 
 const todayISO = new Date().toISOString().slice(0, 10)
@@ -41,41 +47,45 @@ const formatCurrency = (value?: number) =>
         ? "Sin dato"
         : new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value)
 
+const buildForm = (
+    options: DiscountStoreProductOption[],
+    initialStoreProductID?: string,
+    offer?: ISpecialOffer | null,
+) => {
+    const storeProductID = offer?.storeProductID ?? offer?.storeProduct?.storeProductID ?? initialStoreProductID ?? options[0]?.storeProductID ?? ""
+    return {
+        storeProductID,
+        discountType: (offer?.discountType ?? "PERCENTAGE") as DiscountType,
+        value: offer?.value?.toString() ?? "",
+        description: offer?.description ?? "",
+        startDate: offer?.startDate ? offer.startDate.slice(0, 10) : todayISO,
+        endDate: offer?.endDate ? offer.endDate.slice(0, 10) : "",
+        isActive: offer?.isActive ?? true,
+        scope: (offer?.scope ?? "UNIT") as DiscountScope,
+        exclusive: offer?.exclusive ?? false,
+    }
+}
+
 export function DiscountModal({
     isOpen,
     onClose,
     options,
     initialStoreProductID,
+    initialOffer,
     onOfferCreated,
+    onOfferUpdated,
 }: DiscountModalProps) {
     const [saving, setSaving] = useState(false)
-    const [form, setForm] = useState({
-        storeProductID: initialStoreProductID ?? options[0]?.storeProductID ?? "",
-        discountType: "PERCENTAGE" as DiscountType,
-        value: "",
-        description: "",
-        startDate: todayISO,
-        endDate: "",
-        isActive: true,
-        scope: "UNIT" as DiscountScope,
-        exclusive: false,
-    })
+    const [isProductOpen, setIsProductOpen] = useState(false)
+    const [productQuery, setProductQuery] = useState("")
+    const [form, setForm] = useState(() => buildForm(options, initialStoreProductID, initialOffer))
 
     useEffect(() => {
         if (!isOpen) return
-        const defaultId = initialStoreProductID ?? options[0]?.storeProductID ?? ""
-        setForm({
-            storeProductID: defaultId,
-            discountType: "PERCENTAGE",
-            value: "",
-            description: "",
-            startDate: todayISO,
-            endDate: "",
-            isActive: true,
-            scope: "UNIT",
-            exclusive: false,
-        })
-    }, [isOpen, initialStoreProductID, options])
+        setForm(buildForm(options, initialStoreProductID, initialOffer))
+        setProductQuery("")
+        setIsProductOpen(false)
+    }, [isOpen, initialStoreProductID, initialOffer, options])
 
     const selectedProduct = useMemo(
         () => options.find((option) => option.storeProductID === form.storeProductID),
@@ -83,9 +93,26 @@ export function DiscountModal({
     )
 
     const selectedPriceList = selectedProduct?.priceList
+    const filteredOptions = useMemo(() => {
+        const query = normalize(productQuery)
+        if (!query) return options
+        return options.filter((option) => {
+            const searchable = normalize(
+                `${option.productName} ${option.variationName} ${option.storeName} ${option.storeProductID}`,
+            )
+            return searchable.includes(query)
+        })
+    }, [options, productQuery])
+
     const discountKindLabel = form.discountType === "PERCENTAGE" ? "Porcentaje" : "Precio fijo"
     const scopeLabel = form.scope === "UNIT" ? "Por unidad" : "Total"
     const activeLabel = form.isActive ? "Activa" : "Pausada"
+    const editingOffer = !!initialOffer?.offerID
+    const actionLabel = editingOffer ? "Actualizar descuento" : "Guardar descuento"
+    const headerLabel = editingOffer ? "Editar descuento para tienda" : "Crear descuento para tienda"
+    const descriptionLabel = editingOffer
+        ? "Ajusta los datos de la oferta seleccionada y guarda los cambios."
+        : "Define una oferta clara, con vigencia, alcance y reglas visibles para el equipo."
 
     const handleSave = async () => {
         if (!form.storeProductID) {
@@ -93,8 +120,19 @@ export function DiscountModal({
             return
         }
         const parsedValue = parseFloat(form.value)
+
         if (isNaN(parsedValue) || parsedValue <= 0) {
-            toast.error("Ingresa un valor válido para el descuento")
+            toast.error("El descuento debe ser mayor a 0")
+            return
+        }
+
+        if (form.discountType === "PERCENTAGE" && parsedValue > 100) {
+            toast.error("El porcentaje no puede ser mayor a 100%")
+            return
+        }
+
+        if (form.discountType === "FIXED_PRICE" && selectedPriceList !== undefined && parsedValue >= selectedPriceList) {
+            toast.error("El descuento fijo no puede ser mayor o igual al precio del producto")
             return
         }
 
@@ -111,9 +149,15 @@ export function DiscountModal({
                 scope: form.scope,
                 exclusive: form.exclusive,
             }
-            await createOffer(payload)
-            toast.success("Oferta creada correctamente")
-            onOfferCreated?.(form.storeProductID)
+            if (initialOffer?.offerID) {
+                await updateOffer(initialOffer.offerID, payload)
+                toast.success("Oferta actualizada correctamente")
+                onOfferUpdated?.(form.storeProductID)
+            } else {
+                await createOffer(payload)
+                toast.success("Oferta creada correctamente")
+                onOfferCreated?.(form.storeProductID)
+            }
             onClose()
         } catch {
             toast.error("No se pudo crear el descuento")
@@ -133,15 +177,15 @@ export function DiscountModal({
                                 Descuento rápido
                             </Badge>
                             <Badge variant="outline" className="border-white/15 text-white/80">
-                                {activeLabel}
+                                {editingOffer ? "Modo edición" : activeLabel}
                             </Badge>
                         </div>
                         <div className="space-y-1">
                             <DialogTitle className="text-2xl font-semibold tracking-tight">
-                                Crear descuento para tienda
+                                {headerLabel}
                             </DialogTitle>
                             <DialogDescription className="max-w-xl text-sm text-slate-300">
-                                Define una oferta clara, con vigencia, alcance y reglas visibles para el equipo.
+                                {descriptionLabel}
                             </DialogDescription>
                         </div>
                     </DialogHeader>
@@ -170,23 +214,66 @@ export function DiscountModal({
                                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Producto seleccionado</h3>
                             </div>
                             <Label className="text-xs uppercase tracking-wide text-slate-500">Producto de tienda</Label>
-                            <Select
-                                value={form.storeProductID}
-                                onValueChange={(value) => setForm((prev) => ({ ...prev, storeProductID: value }))}
-                            >
-                                <SelectTrigger className="mt-2 h-11 rounded-xl border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-950">
-                                    <SelectValue placeholder="Selecciona un producto" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {options.map((option) => (
-                                        <SelectItem key={option.storeProductID} value={option.storeProductID}>
-                                            {option.productName} - Talla {option.variationName} ({option.storeName})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={isProductOpen} onOpenChange={setIsProductOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={isProductOpen}
+                                        className="mt-2 h-11 w-full justify-between rounded-xl border-slate-200 bg-slate-50 text-sm font-normal dark:border-slate-700 dark:bg-slate-950"
+                                    >
+                                        {selectedProduct
+                                            ? `${selectedProduct.productName} - Talla ${selectedProduct.variationName} (${selectedProduct.storeName})`
+                                            : "Selecciona un producto"}
+                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                                    align="start"
+                                    sideOffset={8}
+                                >
+                                    <Command shouldFilter={false}>
+                                        <CommandInput
+                                            placeholder="Buscar por nombre..."
+                                            value={productQuery}
+                                            onValueChange={setProductQuery}
+                                        />
+                                        <CommandList>
+                                            <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                                            <CommandGroup>
+                                                {filteredOptions.map((option) => (
+                                                    <CommandItem
+                                                        key={option.storeProductID}
+                                                        value={option.storeProductID}
+                                                        onSelect={() => {
+                                                            setForm((prev) => ({ ...prev, storeProductID: option.storeProductID }))
+                                                            setIsProductOpen(false)
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={`mr-2 h-4 w-4 ${form.storeProductID === option.storeProductID ? "opacity-100" : "opacity-0"}`}
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <span>{option.productName}</span>
+                                                            <span className="text-xs text-slate-500">
+                                                                Talla {option.variationName} · {option.storeName}
+                                                            </span>
+                                                        </div>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             {!options.length && (
                                 <p className="mt-2 text-xs text-rose-500">No hay productos de tienda disponibles.</p>
+                            )}
+                            {options.length > 0 && filteredOptions.length === 0 && (
+                                <p className="mt-2 text-xs text-slate-500">
+                                    No hay coincidencias para "{productQuery}".
+                                </p>
                             )}
 
                             {selectedProduct && (
@@ -240,6 +327,7 @@ export function DiscountModal({
                                     className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                 >
                                     <option value="PERCENTAGE">Porcentaje (%)</option>
+                                    <option value="FIXED_AMOUNT">Monto fijo</option>
                                     <option value="FIXED_PRICE">Precio fijo</option>
                                 </select>
                             </div>
@@ -247,8 +335,27 @@ export function DiscountModal({
                                 <Label className="text-xs uppercase tracking-wide text-slate-500">Valor</Label>
                                 <Input
                                     type="number"
+                                    min={1}
+                                    max={form.discountType === "PERCENTAGE" ? 100 : undefined}
                                     value={form.value}
-                                    onChange={(event) => setForm((prev) => ({ ...prev, value: event.target.value }))}
+                                    onChange={(event) => {
+                                        let val = event.target.value
+                                        // Prevents negative numbers from being typed
+                                        if (val.includes("-")) return
+
+                                        // If percentage, limit to 100 immediately
+                                        if (form.discountType === "PERCENTAGE" && parseFloat(val) > 100) {
+                                            val = "100"
+                                        }
+
+                                        setForm((prev) => ({ ...prev, value: val }))
+                                    }}
+                                    onKeyDown={(e) => {
+                                        // Prevent user from pressing '-', 'e', or '+'
+                                        if (e.key === '-' || e.key === 'e' || e.key === '+') {
+                                            e.preventDefault()
+                                        }
+                                    }}
                                     placeholder={form.discountType === "PERCENTAGE" ? "Ej: 15" : "Ej: 19990"}
                                     className="mt-2 h-11 rounded-xl border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-950"
                                 />
@@ -348,7 +455,7 @@ export function DiscountModal({
                             className="w-full bg-gradient-to-r from-slate-950 to-slate-700 text-white shadow-lg shadow-slate-950/20 hover:from-slate-900 hover:to-slate-600 sm:w-auto"
                         >
                             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Guardar descuento
+                            {actionLabel}
                         </Button>
                     </DialogFooter>
                 </div>
