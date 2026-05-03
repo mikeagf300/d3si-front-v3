@@ -1,4 +1,4 @@
-import { getAllProducts } from "@/actions/products/getAllProducts"
+import { getInventoryProducts } from "@/actions/products/getInventoryProducts"
 import { getAllCategories } from "@/actions/categories/getAllCategories"
 import { getAllStores } from "@/actions/stores/getAllStores"
 import InventoryClientWrapper from "@/components/Inventory/InventoryClientWrapper"
@@ -6,7 +6,7 @@ import InventoryClientWrapper from "@/components/Inventory/InventoryClientWrappe
 export default async function InventoryPage() {
     // Lógica de obtención en servidor
     const [productsData, categoriesData, storesData] = await Promise.all([
-        getAllProducts(),
+        getInventoryProducts(),
         getAllCategories(),
         getAllStores(),
     ])

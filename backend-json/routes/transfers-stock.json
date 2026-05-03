@@ -77,6 +77,76 @@
         }
     },
     "/transfers": {
+        "get": {
+            "description": "Retorna todas las transferencias con filtros opcionales por tienda origen, destino, estado y paginación.",
+            "operationId": "TransfersController_findAll",
+            "parameters": [
+                {
+                    "name": "originStoreID",
+                    "required": false,
+                    "in": "query",
+                    "description": "Filtrar por tienda de origen (UUID)",
+                    "schema": {
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440000",
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "destinationStoreID",
+                    "required": false,
+                    "in": "query",
+                    "description": "Filtrar por tienda de destino (UUID)",
+                    "schema": {
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440001",
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "status",
+                    "required": false,
+                    "in": "query",
+                    "description": "Filtrar por estado de la transferencia",
+                    "schema": {
+                        "enum": ["PENDING", "COMPLETED", "CANCELLED"],
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "page",
+                    "required": false,
+                    "in": "query",
+                    "description": "Página (paginación)",
+                    "schema": {
+                        "minimum": 1,
+                        "default": 1,
+                        "type": "number"
+                    }
+                },
+                {
+                    "name": "limit",
+                    "required": false,
+                    "in": "query",
+                    "description": "Cantidad de registros por página",
+                    "schema": {
+                        "minimum": 1,
+                        "default": 20,
+                        "type": "number"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Listado de transferencias paginado."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Listar historial de transferencias",
+            "tags": ["Transferencias entre Tiendas"]
+        },
         "post": {
             "description": "Inicia un proceso de transferencia entre una tienda origen y una tienda destino.",
             "operationId": "TransfersController_createTransfer",

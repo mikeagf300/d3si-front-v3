@@ -3,6 +3,26 @@ import type { IStore } from "../stores/IStore"
 
 export type TransferStatus = "PENDING" | "COMPLETED" | "CANCELLED"
 
+export interface ITransferListFilters {
+    originStoreID?: string
+    destinationStoreID?: string
+    status?: TransferStatus
+    page?: number
+    limit?: number
+}
+
+export interface ITransferListMeta {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+}
+
+export interface ITransferListResult {
+    items: ITransfer[]
+    meta: ITransferListMeta
+}
+
 export interface ITransferItem {
     transferItemID: string
     transferID: string

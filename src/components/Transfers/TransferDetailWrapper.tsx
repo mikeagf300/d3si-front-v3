@@ -218,7 +218,7 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
 
             <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
                 {isPending ? (
-                    <Card className="flex min-h-0 flex-col border-slate-200/80 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
+                    <Card id="add-products" className="flex min-h-0 flex-col border-slate-200/80 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
                         <CardHeader className="space-y-3 border-b border-slate-100 pb-5 dark:border-slate-800">
                             <div className="flex items-center justify-between gap-3">
                                 <div>

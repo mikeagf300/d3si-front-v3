@@ -8,9 +8,9 @@ import InventoryPagination from "@/components/Inventory/TableSection/InventoryPa
 import { ColumnFilters } from "@/components/Inventory/TableSection/ColumnFilters"
 import { createMassiveProducts } from "@/actions/products/createMassiveProducts"
 import { deleteProduct } from "@/actions/products/deleteProduct"
-import type { IProduct } from "@/interfaces/products/IProduct"
 import type { ICategory } from "@/interfaces/categories/ICategory"
 import type { IStore } from "@/interfaces/stores/IStore"
+import type { IRawProduct } from "@/interfaces/products/IRawProduct"
 import { useAuth } from "@/stores/user.store"
 import { useTienda } from "@/stores/tienda.store"
 import { Role } from "@/lib/userRoles"
@@ -23,7 +23,7 @@ import { useInventory } from "@/hooks/useInventory"
 import { createInventoryMovement } from "@/actions/inventory/createInventoryMovement"
 
 interface Props {
-    initialProducts: IProduct[]
+    initialProducts: IRawProduct[]
     categories: ICategory[]
     stores: IStore[]
 }
@@ -66,7 +66,7 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
         }
     }, [])
 
-    function handleDeleteProduct(product: IProduct) {
+    function handleDeleteProduct(product: any) {
         const confirm = window.confirm(
             `¿Estás seguro de que deseas eliminar el producto "${product.name}"? Esta acción no se puede revertir.`,
         )
@@ -82,7 +82,7 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
         })
     }
 
-    async function handleSaveEdit(product: IProduct, variationID?: string) {
+    async function handleSaveEdit(product: any, variationID?: string) {
         const editingField = inventoryStore.getState().editingField
         if (!editingField) return
         const { field } = editingField
@@ -97,13 +97,16 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
                 genre: product.genre,
                 brand: isEditingBrand ? editValue : isProductBrand ? product.brand : "Otro",
                 categoryID: isEmptyCategory ? null : product.categoryID,
-                sizes: product.ProductVariations.map((v) => ({
-                    sku: v.sku,
-                    sizeNumber: v.sizeNumber,
-                    priceList: v.priceList,
-                    priceCost: v.priceCost,
-                    stockQuantity: v.stockQuantity,
-                })),
+                sizes: product.variations.map((v: any) => {
+                    const sp = v.storeProducts?.find((s: any) => s.storeID === storeSelected?.storeID) || v.storeProducts?.[0]
+                    return {
+                        sku: v.sku,
+                        sizeNumber: v.size,
+                        priceList: sp?.priceList || 0,
+                        priceCost: sp?.priceCost || 0,
+                        stockQuantity: sp?.stock || 0,
+                    }
+                }),
             } as CreateProductFormData
             toast.promise(createMassiveProducts({ products: [updated] }), {
                 loading: "Actualizando producto...",
@@ -119,9 +122,14 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
             return
         }
 
-        const variation = product.ProductVariations.find((v) => v.variationID === variationID)
+        const variation = product.variations.find((v: any) => v.variationID === variationID)
         if (!variation) return
-        const newStockValue = field === "stockQuantity" ? Number(editValue) : variation.stockQuantity
+        const sp = variation.storeProducts?.find((s: any) => s.storeID === storeSelected?.storeID) || variation.storeProducts?.[0]
+        const currentStock = sp?.stock || 0
+        const currentPriceList = sp?.priceList || 0
+        const currentPriceCost = sp?.priceCost || 0
+
+        const newStockValue = field === "stockQuantity" ? Number(editValue) : currentStock
         const updated = {
             name: product.name,
             image: product.image,
@@ -131,9 +139,9 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
             sizes: [
                 {
                     sku: variation.sku,
-                    sizeNumber: field === "sizeNumber" ? editValue : variation.sizeNumber,
-                    priceList: field === "priceList" ? Number(editValue) : variation.priceList,
-                    priceCost: field === "priceCost" ? Number(editValue) : variation.priceCost,
+                    sizeNumber: field === "sizeNumber" ? editValue : variation.size,
+                    priceList: field === "priceList" ? Number(editValue) : currentPriceList,
+                    priceCost: field === "priceCost" ? Number(editValue) : currentPriceCost,
                     stockQuantity: newStockValue,
                 },
             ],
@@ -143,7 +151,7 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
             createMassiveProducts({ products: [updated] }).then(async (res) => {
                 // Si se editó el stock, registrar el movimiento en el módulo de inventario
                 if (field === "stockQuantity" && storeSelected?.storeID) {
-                    const diff = newStockValue - variation.stockQuantity
+                    const diff = newStockValue - currentStock
                     try {
                         await createInventoryMovement({
                             storeID: storeSelected.storeID,
@@ -166,11 +174,21 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
                             p.productID === product.productID
                                 ? {
                                       ...p,
-                                      ProductVariations: p.ProductVariations.map((v) =>
+                                      variations: p.variations.map((v: any) =>
                                           v.variationID === variationID
                                               ? {
                                                     ...v,
-                                                    [field]: field === "sizeNumber" ? editValue : Number(editValue),
+                                                    ...(field === "sizeNumber" ? { size: editValue } : {}),
+                                                    storeProducts: (v.storeProducts || []).map((s: any) =>
+                                                        s.storeID === storeSelected?.storeID
+                                                            ? {
+                                                                  ...s,
+                                                                  ...(field === "stockQuantity" ? { stock: Number(editValue) } : {}),
+                                                                  ...(field === "priceList" ? { priceList: Number(editValue) } : {}),
+                                                                  ...(field === "priceCost" ? { priceCost: Number(editValue) } : {}),
+                                                              }
+                                                            : s
+                                                    ),
                                                 }
                                               : v,
                                       ),

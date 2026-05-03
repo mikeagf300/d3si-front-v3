@@ -175,7 +175,7 @@ export function applyColumnFilters(products: any[], filters: any) {
         if (filters.producto.trim()) {
             const searchTerm = filters.producto.toLowerCase()
             const nameMatch = product.name.toLowerCase().includes(searchTerm)
-            const skuMatch = (product.ProductVariations || []).some((v: any) => v.sku === searchTerm)
+            const skuMatch = (product.variations || []).some((v: any) => v.sku === searchTerm)
             const genreMatch = product.genre?.toLowerCase().includes(searchTerm)
 
             if (!(nameMatch || skuMatch || genreMatch)) return false
@@ -189,7 +189,7 @@ export function applyColumnFilters(products: any[], filters: any) {
 
         // CATEGORÍA filter
         if (filters.categoria.trim()) {
-            const categoryName = product.Category?.name?.toLowerCase() || ""
+            const categoryName = product.category?.name?.toLowerCase() || ""
             if (!categoryName.includes(filters.categoria.toLowerCase())) return false
         }
 
@@ -198,8 +198,9 @@ export function applyColumnFilters(products: any[], filters: any) {
 
     // Calcular el stock total de los productos filtrados
     const totalStock = filteredProducts.reduce((sum, product) => {
-        const variationSum = (product.ProductVariations || []).reduce((varSum: number, variation: any) => {
-            return varSum + (variation.stockQuantity || 0)
+        const variationSum = (product.variations || []).reduce((varSum: number, variation: any) => {
+            const varStock = (variation.storeProducts || []).reduce((acc: number, sp: any) => acc + (sp.stock || 0), 0)
+            return varSum + varStock
         }, 0)
 
         return sum + variationSum
@@ -216,7 +217,7 @@ export function applyVariationFilters(variations: any[], filters: any, adminStor
     return variations.filter(({ variation }) => {
         // TALLA filter
         if (filters.talla.trim()) {
-            const sizeMatch = variation.sizeNumber?.toLowerCase().includes(filters.talla.toLowerCase())
+            const sizeMatch = variation.size?.toLowerCase().includes(filters.talla.toLowerCase())
             if (!sizeMatch) return false
         }
 
