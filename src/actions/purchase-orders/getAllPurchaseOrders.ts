@@ -1,6 +1,7 @@
 import { API_URL } from "@/lib/enviroments"
 import { fetcher } from "@/lib/fetcher"
 import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
+import { normalizePurchaseOrder, type RawPurchaseOrder } from "@/lib/normalize-purchase-order"
 
 /**
  * Obtiene todas las órdenes de compra.
@@ -9,14 +10,10 @@ import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 export const getAllPurchaseOrders = async (): Promise<IPurchaseOrder[]> => {
     let orders: IPurchaseOrder[] = []
     try {
-        orders = await fetcher<IPurchaseOrder[]>(`${API_URL}/purchase-orders`)
+        const raw = await fetcher<RawPurchaseOrder[]>(`${API_URL}/purchase-orders`)
+        orders = Array.isArray(raw) ? raw.map(normalizePurchaseOrder) : []
     } catch (error) {
         console.warn("getAllPurchaseOrders: Error fetching orders:", error)
-        return []
-    }
-
-    if (!Array.isArray(orders)) {
-        console.warn("getAllPurchaseOrders: La respuesta no es un array:", orders)
         return []
     }
     return orders

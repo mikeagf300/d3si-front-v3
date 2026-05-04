@@ -75,7 +75,11 @@ export default function UsersTable({ users }: UsersTableProps) {
                                 </TableCell>
                                 <TableCell className="text-blue-600">{usuario.email}</TableCell>
                                 <TableCell className="text-gray-500 dark:text-white">
-                                    {usuario.Stores?.map((store) => store.name).join(", ") || "Sin tiendas"}
+                                    {(usuario.userStores ?? [])
+                                        .map((relation) => relation.store?.name)
+                                        .filter((name): name is string => Boolean(name))
+                                        .join(", ") ||
+                                        "Sin tiendas"}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-2">

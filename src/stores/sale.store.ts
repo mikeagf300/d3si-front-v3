@@ -2,18 +2,28 @@ import { create } from "zustand"
 import { toast } from "sonner"
 import { useTienda } from "./tienda.store"
 import { PaymentType } from "@/interfaces/sales/ISale"
-import { IProduct } from "@/interfaces/products/IProduct"
 import { IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { IVariationWithQuantity } from "@/interfaces/orders/IOrder"
 
-import { IOffer } from "@/interfaces/pricing/IPricing"
+type SaleItemOffer = {
+    offerID: string
+    description?: string
+}
 
 interface SaleItem {
-    product: IProduct
-    variation: IVariationWithQuantity
-    storeProduct: IStoreProduct
+    productName: string
+    productImage?: string | null
+    variationID: string
+    sku: string
+    sizeNumber: string
+    priceList: number
+    quantity: number
+    stockQuantity: number
+    storeProductID: string
+    storeID: string
+    storeName?: string
     finalPrice?: number
-    activeOffer?: IOffer
+    activeOffer?: SaleItemOffer | null
 }
 
 interface SaleState {
@@ -22,14 +32,18 @@ interface SaleState {
     loading: boolean
     actions: {
         addProduct: (
-            product: IProduct,
+            product: { name: string; image?: string | null },
             variation: IVariationWithQuantity,
             storeProduct: IStoreProduct,
             finalPrice?: number,
-            activeOffer?: IOffer,
+            activeOffer?: SaleItemOffer | null,
         ) => void
-        removeProduct: (sku: string) => void
-        updateQuantity: (sku: string, quantity: number) => void
+        removeProduct: (storeProductID: string) => void
+        updateQuantity: (storeProductID: string, quantity: number) => void
+        updateCartItemPricing: (
+            storeProductID: string,
+            pricing: { finalPrice?: number; activeOffer?: SaleItemOffer | null },
+        ) => void
         setPaymentMethod: (method: PaymentType) => void
         clearCart: () => void
     }
@@ -42,31 +56,35 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     actions: {
         addProduct: (product, variation, storeProduct, finalPrice, activeOffer) => {
             const { storeSelected } = useTienda.getState()
-            // `storeSelected` puede ser null (hidración / fast refresh). Si el `storeProduct` ya trae
-            // `storeID` (viene desde URL o desde la variación), permitimos agregar al carrito igual.
-            if (!storeSelected && !storeProduct?.storeID) {
+            const storeIdFromProduct = storeProduct.storeID || storeProduct.Store?.storeID
+            if (!storeSelected && !storeIdFromProduct) {
                 toast.error("Debes elegir una tienda")
                 return
             }
             const { cartItems } = get()
+            const storeProductID = storeProduct.storeProductID
+            const existingItem = cartItems.find((item) => item.storeProductID === storeProductID || item.sku === variation.sku)
+            const stockQuantity = existingItem ? existingItem.stockQuantity : variation.stockQuantity ?? 0
+            const currentQuantity = existingItem ? existingItem.quantity : 0
 
-            const existingItem = cartItems.find((p) => p.variation.sku === variation.sku)
-            const stockQuantity = existingItem ? existingItem.variation.stockQuantity : variation.stockQuantity
-            const currentQuantity = existingItem ? existingItem.variation.quantity : 0
             if (currentQuantity + 1 > stockQuantity) {
                 toast("No se puede agregar más, stock insuficiente.")
                 return
             }
 
+            const desiredQuantity = variation.quantity ?? 1
+            const normalizedQuantity = Math.max(0, Math.min(desiredQuantity, variation.stockQuantity ?? 0))
+            if (normalizedQuantity <= 0) {
+                toast.error("Este producto no tiene stock en la tienda seleccionada")
+                return
+            }
+
             if (existingItem) {
                 const newCartItems = cartItems.map((item) => {
-                    if (item.variation.sku === variation.sku) {
+                    if (item.storeProductID === storeProductID || item.sku === variation.sku) {
                         return {
                             ...item,
-                            variation: {
-                                ...item.variation,
-                                quantity: item.variation.quantity + 1,
-                            },
+                            quantity: item.quantity + 1,
                         }
                     }
                     return item
@@ -76,9 +94,17 @@ export const useSaleStore = create<SaleState>((set, get) => ({
                 const newCartItems = [
                     ...cartItems,
                     {
-                        product,
-                        storeProduct,
-                        variation: { ...variation, quantity: 1 },
+                        productName: product.name,
+                        productImage: product.image ?? null,
+                        variationID: variation.variationID,
+                        sku: variation.sku,
+                        sizeNumber: variation.sizeNumber,
+                        priceList: variation.priceList,
+                        quantity: normalizedQuantity,
+                        stockQuantity: variation.stockQuantity ?? 0,
+                        storeProductID,
+                        storeID: storeProduct.storeID || storeProduct.Store?.storeID || "",
+                        storeName: storeProduct.Store?.name,
                         finalPrice,
                         activeOffer,
                     },
@@ -86,16 +112,32 @@ export const useSaleStore = create<SaleState>((set, get) => ({
                 set({ cartItems: newCartItems })
             }
         },
-        removeProduct: (sku) => {
+        removeProduct: (storeProductID) => {
             set((state) => {
-                const newCartItems = state.cartItems.filter((item) => item.variation.sku !== sku)
+                const newCartItems = state.cartItems.filter((item) => item.storeProductID !== storeProductID)
                 return { cartItems: newCartItems }
             })
         },
-        updateQuantity: (sku, quantity) => {
+        updateQuantity: (storeProductID, quantity) => {
             set((state) => {
                 const newCartItems = state.cartItems.map((item) =>
-                    item.variation.sku === sku ? { ...item, variation: { ...item.variation, quantity } } : item,
+                    item.storeProductID === storeProductID ? { ...item, quantity } : item,
+                )
+                return { cartItems: newCartItems }
+            })
+        },
+        updateCartItemPricing: (storeProductID, pricing) => {
+            set((state) => {
+                const newCartItems = state.cartItems.map((item) =>
+                    item.storeProductID === storeProductID
+                        ? {
+                              ...item,
+                              finalPrice:
+                                  pricing.finalPrice !== undefined ? pricing.finalPrice : item.finalPrice,
+                              activeOffer:
+                                  pricing.activeOffer !== undefined ? pricing.activeOffer : item.activeOffer,
+                          }
+                        : item,
                 )
                 return { cartItems: newCartItems }
             })

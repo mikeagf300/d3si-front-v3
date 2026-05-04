@@ -1,0 +1,212 @@
+{
+    "ProductVariation": {
+        "type": "object",
+        "properties": {
+            "variationID": {
+                "type": "string"
+            },
+            "product": {
+                "$ref": "#/components/schemas/Product"
+            },
+            "storeProducts": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/StoreProduct"
+                }
+            },
+            "sku": {
+                "type": "string"
+            },
+            "color": {
+                "type": "string"
+            },
+            "size": {
+                "type": "string"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": ["variationID", "product", "storeProducts", "sku", "createdAt", "updatedAt"]
+    },
+    "Product": {
+        "type": "object",
+        "properties": {
+            "productID": {
+                "type": "string"
+            },
+            "image": {
+                "type": "string"
+            },
+            "categoryID": {
+                "type": "string"
+            },
+            "category": {
+                "$ref": "#/components/schemas/Category"
+            },
+            "name": {
+                "type": "string"
+            },
+            "brand": {
+                "type": "string"
+            },
+            "genre": {
+                "enum": ["Hombre", "Mujer", "Unisex"],
+                "type": "string"
+            },
+            "description": {
+                "type": "string"
+            },
+            "variations": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/ProductVariation"
+                }
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": ["productID", "category", "name", "variations", "createdAt", "updatedAt"]
+    },
+    "CreateProductVariationDto": {
+        "type": "object",
+        "properties": {
+            "sku": {
+                "type": "string",
+                "description": "Código SKU único que identifica esta variación del producto",
+                "example": "CAM-ROJ-L-001"
+            },
+            "priceCost": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Precio de costo de la variación (lo que cuesta producir/comprar)",
+                "example": 15000
+            },
+            "priceList": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Precio de lista o venta sugerido al público",
+                "example": 25000
+            },
+            "stock": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Cantidad de stock disponible en la tienda central",
+                "example": 100
+            },
+            "color": {
+                "type": "string",
+                "description": "Color de la variante",
+                "example": "Rojo"
+            },
+            "size": {
+                "type": "string",
+                "description": "Talla de la variante",
+                "example": "L"
+            }
+        },
+        "required": ["sku", "priceCost", "priceList", "stock"]
+    },
+    "CreateProductDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Nombre del producto principal",
+                "example": "Camiseta Básica"
+            },
+            "categoryID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la categoría a la que pertenece el producto",
+                "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+            },
+            "image": {
+                "type": "string",
+                "description": "URL de la imagen del producto",
+                "example": "https://example.com/image.jpg"
+            },
+            "brand": {
+                "type": "string",
+                "description": "Marca del producto",
+                "example": "Marca Famosa"
+            },
+            "genre": {
+                "enum": ["Hombre", "Mujer", "Unisex"],
+                "type": "string",
+                "description": "Género al que se dirige el producto",
+                "example": "Unisex"
+            },
+            "description": {
+                "type": "string",
+                "description": "Descripción detallada del producto",
+                "example": "Una camiseta de algodón suave y duradera."
+            },
+            "variations": {
+                "minItems": 1,
+                "description": "Lista de variantes del producto. Debe contener al menos una.",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/CreateProductVariationDto"
+                }
+            }
+        },
+        "required": ["name", "variations"]
+    },
+    "UpdateProductDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Nombre del producto principal",
+                "example": "Camiseta Básica"
+            },
+            "categoryID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la categoría a la que pertenece el producto",
+                "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+            },
+            "image": {
+                "type": "string",
+                "description": "URL de la imagen del producto",
+                "example": "https://example.com/image.jpg"
+            },
+            "brand": {
+                "type": "string",
+                "description": "Marca del producto",
+                "example": "Marca Famosa"
+            },
+            "genre": {
+                "enum": ["Hombre", "Mujer", "Unisex"],
+                "type": "string",
+                "description": "Género al que se dirige el producto",
+                "example": "Unisex"
+            },
+            "description": {
+                "type": "string",
+                "description": "Descripción detallada del producto",
+                "example": "Una camiseta de algodón suave y duradera."
+            },
+            "variations": {
+                "minItems": 1,
+                "description": "Lista de variantes del producto. Debe contener al menos una.",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/CreateProductVariationDto"
+                }
+            }
+        }
+    }
+}

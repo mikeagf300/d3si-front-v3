@@ -2,8 +2,6 @@ import { getAllProducts } from "@/actions/products/getAllProducts"
 import { SaleForm } from "@/components/CreateSale/SaleForm"
 
 import { Suspense } from "react"
-
-export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 const CreateSale = async () => {

@@ -12,7 +12,7 @@ import {
 } from "@/utils/categoryStats"
 
 interface UseCategoryAnalyticsProps {
-    products: IProduct[]
+    products: any[]
     categories: ICategory[]
 }
 

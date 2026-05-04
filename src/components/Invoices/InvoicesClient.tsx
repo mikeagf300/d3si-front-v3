@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react"
 import { useTienda } from "@/stores/tienda.store"
 import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { deleteOrder } from "@/actions/orders/deleteOrder"
 import { InvoicesClientProps } from "@/interfaces/invoices/IInvoices"
 import { useAuth } from "@/stores/user.store"
 import { Role } from "@/lib/userRoles"
@@ -25,14 +24,6 @@ export default function InvoicesClient({ initialOrders, stores }: InvoicesClient
 
     const getStoreName = (storeID: string) => {
         return stores.find((s) => s.storeID === storeID)?.name || "Tienda no encontrada"
-    }
-
-    const handleDelete = async (orderID: string) => {
-        if (confirm("¿Estás seguro de que quieres borrar esta orden?")) {
-            await deleteOrder(orderID)
-            setOrders((prev) => prev.filter((order) => order.purchaseOrderID !== orderID))
-            route.refresh()
-        }
     }
 
     useEffect(() => {

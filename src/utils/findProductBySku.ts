@@ -4,11 +4,15 @@ import { IProduct } from "@/interfaces/products/IProduct"
  * Busca un producto por SKU dentro de un array de productos y filtra por tienda.
  * Esta es una función helper para el componente de inventario.
  */
-export const findProductBySku = (products: IProduct[], storeId: string, skuInput: string) => {
+export const findProductBySku = (products: any[], storeId: string, skuInput: string) => {
     for (const product of products) {
-        const variation = product.ProductVariations.find((v) => v.sku === skuInput)
-        if (variation && variation.StoreProducts) {
-            const variationStoreProduct = variation.StoreProducts.find((sp) => sp.storeID === storeId)
+        const variations = product.ProductVariations || product.variations || []
+        const variation = variations.find((v: any) => v.sku === skuInput)
+        
+        if (variation) {
+            const storeProducts = variation.StoreProducts || variation.storeProducts || []
+            const variationStoreProduct = storeProducts.find((sp: any) => sp.storeID === storeId) || storeProducts[0]
+            
             if (!variationStoreProduct) return null
 
             return {
@@ -17,8 +21,8 @@ export const findProductBySku = (products: IProduct[], storeId: string, skuInput
                 name: product.name,
                 image: product.image || "",
                 storeProductID: variationStoreProduct.storeProductID || "",
-                priceList: Number(variation.priceList),
-                stock: variationStoreProduct.quantity ?? 0,
+                priceList: Number(variationStoreProduct.priceList || variation.priceList || 0),
+                stock: variationStoreProduct.quantity ?? variationStoreProduct.stock ?? 0,
             }
         }
     }

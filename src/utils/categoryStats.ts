@@ -58,7 +58,7 @@ const COLORS = [
 /**
  * Calcula estadísticas agrupadas por tipo/género.
  */
-export const calculateTypeStats = (products: IProduct[]): Map<string, ITypeStats> => {
+export const calculateTypeStats = (products: any[]): Map<string, ITypeStats> => {
     const stats = new Map<string, any>()
     for (const product of products) {
         const type = product.genre || "Sin género"
@@ -68,10 +68,13 @@ export const calculateTypeStats = (products: IProduct[]): Map<string, ITypeStats
             stats.set(type, entry)
         }
         entry.productCount += 1
-        for (const variation of product.ProductVariations || []) {
-            const qty = variation.stockQuantity || 0
-            entry.totalCost += Number(variation.priceCost) * qty
-            entry.totalRevenue += Number(variation.priceList) * qty
+        const variations = product.ProductVariations || product.variations || []
+        for (const variation of variations) {
+            const qty = variation.stockQuantity || (variation.storeProducts || []).reduce((sum: number, sp: any) => sum + (sp.stock || 0), 0) || 0
+            const pCost = variation.priceCost || (variation.storeProducts || [])[0]?.priceCost || 0
+            const pList = variation.priceList || (variation.storeProducts || [])[0]?.priceList || 0
+            entry.totalCost += Number(pCost) * qty
+            entry.totalRevenue += Number(pList) * qty
             entry.count += qty
         }
     }
@@ -82,7 +85,7 @@ export const calculateTypeStats = (products: IProduct[]): Map<string, ITypeStats
  * Calcula estadísticas para todas las categorías y luego acumula los totales
  * de las subcategorías en sus padres.
  */
-export const calculateCategoryStats = (products: IProduct[], categories: ICategory[]) => {
+export const calculateCategoryStats = (products: any[], categories: ICategory[]) => {
     const statsMap = new Map<string, ICategoryStats>()
 
     // 1. Inicializar el mapa con todas las categorías y subcategorías
@@ -130,11 +133,14 @@ export const calculateCategoryStats = (products: IProduct[], categories: ICatego
         if (stats) {
             stats.productCount += 1
             // Contar stock real y calcular costos basados en stock
-            for (const v of product.ProductVariations || []) {
-                const stockQuantity = v.stockQuantity || 0
+            const variations = product.ProductVariations || product.variations || []
+            for (const v of variations) {
+                const stockQuantity = v.stockQuantity || (v.storeProducts || []).reduce((sum: number, sp: any) => sum + (sp.stock || 0), 0) || 0
+                const pCost = v.priceCost || (v.storeProducts || [])[0]?.priceCost || 0
+                const pList = v.priceList || (v.storeProducts || [])[0]?.priceList || 0
                 stats.count += stockQuantity
-                stats.totalCost += Number(v.priceCost) * stockQuantity
-                stats.totalRevenue += Number(v.priceList) * stockQuantity
+                stats.totalCost += Number(pCost) * stockQuantity
+                stats.totalRevenue += Number(pList) * stockQuantity
             }
         }
     }

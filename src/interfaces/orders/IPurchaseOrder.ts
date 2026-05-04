@@ -6,9 +6,13 @@ import { ICategory } from "../categories/ICategory"
 export type PurchaseOrderStatus = "Pendiente" | "Pagado" | "Cancelado" | "Enviado" | "Recibido"
 
 export interface IPurchaseOrderItem {
+    purchaseOrderItemID?: string
     variationID: string
     quantity: number
     unitPrice: number
+    subtotal?: number
+    quantityReceived?: number
+    quantityRequested?: number
 }
 
 export interface IPurchaseOrderItemReceived {

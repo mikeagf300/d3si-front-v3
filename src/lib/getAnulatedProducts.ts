@@ -1,44 +1,30 @@
-import { ISaleProduct, IsaleProductReturned, ISaleResponse } from "@/interfaces/sales/ISale"
+import { ISaleProduct, ISaleResponse } from "@/interfaces/sales/ISale"
 
 export const getAnulatedProducts = (sale: ISaleResponse): ISaleProduct[] => {
-    // Backward compatible: match by `saleProductID` (new), `variationID` (new) or `storeProductID` (legacy)
+    const returnItems = sale.Return?.ProductAnulations ?? []
+    if (returnItems.length === 0) return []
+
     const returnedQtyByKey = new Map<string, number>()
-    if (!sale.Return) return []
-    const { SaleProducts, Return } = sale
-    const { ProductAnulations } = Return
-    ProductAnulations.forEach((anul: IsaleProductReturned) => {
-        const returnedQty = anul.returnedQuantity || 0
-        const keys = [anul.saleProductID, anul.variationID, anul.storeProductID].filter((k): k is string => Boolean(k))
 
-        keys.forEach((key) => {
-            returnedQtyByKey.set(key, (returnedQtyByKey.get(key) || 0) + returnedQty)
-        })
+    for (const anul of returnItems) {
+        const returnedQty = anul.returnedQuantity ?? 0
+        const keys = [anul.saleProductID, anul.variationID, anul.storeProductID].filter(
+            (key): key is string => Boolean(key),
+        )
+
+        for (const key of keys) {
+            returnedQtyByKey.set(key, (returnedQtyByKey.get(key) ?? 0) + returnedQty)
+        }
+    }
+
+    return sale.SaleProducts.flatMap((saleProduct) => {
+        const returnedQty =
+            returnedQtyByKey.get(saleProduct.saleProductID) ??
+            returnedQtyByKey.get(saleProduct.variationID) ??
+            0
+
+        if (returnedQty <= 0) return []
+
+        return [{ ...saleProduct, quantitySold: returnedQty }]
     })
-
-    const anulatedProducts: ISaleProduct[] = SaleProducts
-        // ➡️ Filtrar: Solo mantiene los productos que tienen alguna devolución/anulación.
-        .filter((saleP) => {
-            const qty =
-                (saleP.saleProductID && returnedQtyByKey.get(saleP.saleProductID)) ||
-                (saleP.variationID && returnedQtyByKey.get(saleP.variationID)) ||
-                0
-            return qty > 0
-        })
-
-        // 🔄 Mapear: Transforma el objeto ISaleProduct.
-        .map((saleP) => {
-            const returnedQty =
-                (saleP.saleProductID && returnedQtyByKey.get(saleP.saleProductID)) ||
-                (saleP.variationID && returnedQtyByKey.get(saleP.variationID)) ||
-                0
-
-            // Crear una copia del producto vendido.
-            const modifiedProduct: ISaleProduct = { ...saleP }
-
-            // Sobreescribir los datos importantes.
-            modifiedProduct.quantitySold = returnedQty
-            return { ...modifiedProduct }
-        })
-
-    return anulatedProducts
 }

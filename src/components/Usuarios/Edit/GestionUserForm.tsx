@@ -30,7 +30,11 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
 
     // Estados para los campos del formulario
     const [nombre, setNombre] = useState(usuario.name)
-    const [tiendAsignadas, setTiendasAsignadas] = useState(usuario.Stores || [])
+    const [tiendAsignadas, setTiendasAsignadas] = useState(
+        (usuario.userStores ?? [])
+            .map((relation) => relation.store)
+            .filter((store): store is NonNullable<typeof store> => Boolean(store)),
+    )
     const [selectedStoreId, setselectedStoreId] = useState<string>("")
     const [isLoading, setIsLoading] = useState(false)
 

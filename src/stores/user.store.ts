@@ -3,13 +3,12 @@ import { persist } from "zustand/middleware"
 import { IUser } from "@/interfaces/users/IUser"
 import { useTienda } from "./tienda.store"
 
-type IUserNoStores = Omit<IUser, "Stores">
 interface UserStore {
-    user: IUserNoStores | null
+    user: IUser | null
     token: string | null
     users: IUser[]
     setUsers: (users: IUser[]) => void
-    setUser: (user: IUserNoStores, token: string) => void
+    setUser: (user: IUser, token: string) => void
     logout: () => void
 }
 

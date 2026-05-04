@@ -12,21 +12,15 @@
  * const user = await fetcher<User>(`${API_URL}/users/123`);
  */
 
-import { useAuth } from "@/stores/user.store"
+import { getClientAuthToken } from "@/lib/auth-session"
 
 const getServerToken = async (): Promise<string | null> => {
     try {
         const { cookies } = await import("next/headers")
         const cookieStore = await cookies()
-        const tokenValue = cookieStore.get("auth_token")?.value ?? null
-        if (!tokenValue) {
-            console.warn(" [fetcher SERVER] No se encontró auth_token en las cookies del servidor")
-        } else {
-            console.log(" [fetcher SERVER] Token encontrado en cookie del servidor")
-        }
-        return tokenValue
+        return cookieStore.get("auth_token")?.value ?? null
     } catch (error) {
-        console.error(" [fetcher SERVER] Error al leer cookies:", error)
+        console.error("Error al leer cookies del servidor:", error)
         return null
     }
 }
@@ -35,15 +29,12 @@ export const fetcher = async <T>(url: string, options: RequestInit = {}): Promis
     let token: string | null = null
 
     if (typeof window === "undefined") {
-        // Entorno servidor (Server Components / Server Actions)
         token = await getServerToken()
     } else {
-        // Entorno cliente (Client Components)
-        token = useAuth.getState().token
+        token = getClientAuthToken()
     }
 
     const headers: HeadersInit = {
-        // Solo enviar Content-Type cuando hay body; los DELETE/GET sin body no deben incluirlo.
         ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,

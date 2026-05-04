@@ -1,0 +1,48 @@
+{
+    "Expense": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "string",
+                "description": "ID único del gasto",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "name": {
+                "type": "string",
+                "description": "Nombre o descripción del gasto",
+                "example": "Servicios de limpieza"
+            },
+            "deductibleDate": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha del gasto para fines contables",
+                "example": "2023-10-27T10:00:00Z"
+            },
+            "amount": {
+                "type": "number",
+                "description": "Monto total del gasto",
+                "example": 250.75
+            },
+            "type": {
+                "enum": ["financial", "operational", "administrative"],
+                "type": "string",
+                "description": "Categoría del gasto",
+                "example": "administrative"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha de creación del registro"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha de la última actualización"
+            },
+            "store": {
+                "$ref": "#/components/schemas/Store"
+            }
+        },
+        "required": ["id", "name", "deductibleDate", "amount", "type", "createdAt", "updatedAt", "store"]
+    }
+}

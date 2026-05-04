@@ -1,6 +1,5 @@
 import { ISendSaleReturn } from "@/interfaces/sales/ISale"
-import { API_URL } from "@/lib/enviroments"
-import { fetcher } from "@/lib/fetcher"
+import { updateSaleStatus } from "./updateSaleStatus"
 
 export interface AnularSale {
     saleID: string
@@ -15,12 +14,13 @@ export interface AnularSale {
 }
 
 /**
- * Anula una venta o registra una devolución.
- * PUT /sales
+ * Anula una venta usando el contrato documentado por backend.
+ * Fallback: PATCH /sales/:id/status
  */
 export const anularSale = async (details: AnularSale) => {
-    return fetcher(`${API_URL}/sales`, {
-        method: "PUT",
-        body: JSON.stringify(details),
-    })
+    console.warn(
+        "anularSale: backend JSON no expone un flujo de devoluciones, usando PATCH /sales/{id}/status como fallback.",
+        details,
+    )
+    return updateSaleStatus(details.saleID, { status: "Anulado" })
 }

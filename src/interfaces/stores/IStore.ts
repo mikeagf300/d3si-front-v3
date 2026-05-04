@@ -1,5 +1,6 @@
-import { IUser } from "../users/IUser"
+import type { IUser } from "../users/IUser"
 import { IStoreProduct } from "./IStoreProduct"
+import type { IUserStoreRelation } from "@/interfaces/common/IUserStoreRelation"
 
 export interface IStore {
     storeID: string
@@ -20,5 +21,6 @@ export interface IStore {
     createdAt: string
     updatedAt: string
     StoreProduct?: IStoreProduct
+    userStores: IUserStoreRelation[]
     Users?: IUser[]
 }

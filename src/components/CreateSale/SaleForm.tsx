@@ -12,40 +12,86 @@ import { Button } from "../ui/button"
 import { useTienda } from "@/stores/tienda.store"
 import { createNewSale } from "@/actions/sales/postSale"
 import { toast } from "sonner"
+import { DiscountModal, DiscountStoreProductOption } from "@/components/Discounts/DiscountModal"
+import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
+
+const isSpecialStoreFilter = (value: string | null) => value === "all" || value === "propias" || value === "consignadas"
 
 export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) => {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { cartItems, paymentMethod, actions } = useSaleStore()
-    const { setPaymentMethod, clearCart } = actions
+    const { setPaymentMethod, clearCart, updateCartItemPricing } = actions
     const { storeSelected } = useTienda()
     const [loading, setLoading] = useState(false)
+    const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
 
-    // Prefer storeSelected from Zustand; fallback to storeID directly from the URL
-    const effectiveStoreID = storeSelected?.storeID ?? searchParams.get("storeID") ?? ""
-
+    const urlStoreID = searchParams.get("storeID")
+    const effectiveStoreID = storeSelected?.storeID ?? (urlStoreID && !isSpecialStoreFilter(urlStoreID) ? urlStoreID : "")
     const total = useMemo(() => {
         return cartItems.reduce((acc, item) => {
-            const price = item.finalPrice ?? item.variation.priceList
-            return acc + item.variation.quantity * price
+            const price = item.finalPrice ?? item.priceList
+            return acc + item.quantity * price
         }, 0)
     }, [cartItems])
 
+    const discountableStoreProducts = useMemo<DiscountStoreProductOption[]>(() => {
+        const seen = new Set<string>()
+        return cartItems
+            .filter((item) => Boolean(item.storeProductID))
+            .filter((item) => {
+                if (seen.has(item.storeProductID)) return false
+                seen.add(item.storeProductID)
+                return true
+            })
+            .map((item) => ({
+                storeProductID: item.storeProductID,
+                productName: item.productName,
+                variationName: item.sizeNumber,
+                storeName: item.storeName ?? item.storeID,
+                storeID: item.storeID,
+                priceList: item.priceList,
+            }))
+    }, [cartItems])
+
+    const hasDiscountableProducts = discountableStoreProducts.length > 0
+    const handleDiscountCreated = async (storeProductID: string) => {
+        try {
+            const priceCheck = await getPriceCheck(storeProductID)
+            updateCartItemPricing(storeProductID, {
+                finalPrice: priceCheck.finalPrice,
+                activeOffer: priceCheck.activeOffer ?? undefined,
+            })
+        } catch (error) {
+            console.error("SaleForm: error refreshing pricing", error)
+            toast.error("No se pudo actualizar el precio del producto")
+        }
+    }
+
     const handleSubmit = async () => {
         try {
-            const hasEmptyProducts = cartItems.filter((item) => item.variation.quantity === 0)
+            const hasEmptyProducts = cartItems.filter((item) => item.quantity === 0)
             if (hasEmptyProducts.length > 0) {
                 return toast.error("Por favor elimina los productos sin stock")
             }
-            setLoading(true)
             if (!effectiveStoreID) return toast.error("No hay una tienda elegida")
+
+            const storeIDsInCart = new Set(cartItems.map((item) => item.storeID).filter(Boolean))
+            if (storeIDsInCart.size > 1) {
+                return toast.error("El carrito contiene productos de distintas tiendas.")
+            }
+            if (storeIDsInCart.size === 1 && !storeIDsInCart.has(effectiveStoreID)) {
+                return toast.error("La tienda seleccionada no coincide con los productos del carrito.")
+            }
+
+            setLoading(true)
             const toSubmitSale: ISaleRequest = {
                 paymentType: paymentMethod,
                 storeID: effectiveStoreID,
                 items: cartItems.map((item) => ({
-                    variationID: item.variation.variationID,
-                    quantity: item.variation.quantity,
-                    unitPrice: item.finalPrice ?? item.variation.priceList,
+                    variationID: item.variationID,
+                    quantity: item.quantity,
+                    unitPrice: item.finalPrice ?? item.priceList,
                 })),
             }
 
@@ -54,10 +100,13 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
                 toast.success("Venta generada exitosamente! Redirigiendo...")
                 actions.clearCart()
                 router.refresh()
-                router.push(`/home?storeID=${effectiveStoreID}`)
+                router.push(
+                    res.saleID ? `/home/${res.saleID}?storeID=${effectiveStoreID}` : `/home?storeID=${effectiveStoreID}`,
+                )
             }
         } catch (error) {
-            toast.error("Falló al crear la venta :(")
+            const message = error instanceof Error ? error.message : "Falló al crear la venta :("
+            toast.error(message)
         } finally {
             setLoading(false)
         }
@@ -103,7 +152,31 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
                         {loading ? "Procesando..." : "Vender"}
                     </Button>
                 </div>
+                <div className="mt-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsDiscountModalOpen(true)}
+                            disabled={!hasDiscountableProducts}
+                        >
+                            Crear descuento
+                        </Button>
+                        {!hasDiscountableProducts && (
+                            <p className="text-xs text-gray-500">
+                                Agrega un producto con stock asignado para habilitar descuentos.
+                            </p>
+                        )}
+                    </div>
+                </div>
             </div>
+            <DiscountModal
+                isOpen={isDiscountModalOpen}
+                onClose={() => setIsDiscountModalOpen(false)}
+                options={discountableStoreProducts}
+                initialStoreProductID={discountableStoreProducts[0]?.storeProductID}
+                onOfferCreated={(storeProductID) => handleDiscountCreated(storeProductID)}
+            />
         </>
     )
 }

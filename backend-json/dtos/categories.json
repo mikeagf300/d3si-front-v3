@@ -1,0 +1,67 @@
+{
+    "Category": {
+        "type": "object",
+        "properties": {
+            "categoryID": {
+                "type": "string"
+            },
+            "parentID": {
+                "type": "string"
+            },
+            "name": {
+                "type": "string"
+            },
+            "parent": {
+                "$ref": "#/components/schemas/Category"
+            },
+            "children": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/Category"
+                }
+            },
+            "products": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/Product"
+                }
+            }
+        },
+        "required": ["categoryID", "parentID", "name", "parent", "children", "products"]
+    },
+    "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Nombre de la categoría",
+                "example": "Vestuario"
+            },
+            "parentID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la categoría padre (para crear subcategorías)",
+                "example": "123e4567-e89b-12d3-a456-426614174000",
+                "nullable": true
+            }
+        },
+        "required": ["name"]
+    },
+    "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Nombre de la categoría",
+                "example": "Vestuario"
+            },
+            "parentID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la categoría padre (para crear subcategorías)",
+                "example": "123e4567-e89b-12d3-a456-426614174000",
+                "nullable": true
+            }
+        }
+    }
+}

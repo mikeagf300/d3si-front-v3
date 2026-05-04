@@ -6,13 +6,13 @@ import { useTienda } from "@/stores/tienda.store"
 import { inventoryStore } from "@/stores/inventory.store"
 import { applyColumnFilters, applyVariationFilters } from "@/components/Inventory/TableSection/ColumnFilters"
 import { Role } from "@/lib/userRoles"
-import type { IProduct } from "@/interfaces/products/IProduct"
 import type { IStore } from "@/interfaces/stores/IStore"
+import type { IRawProduct } from "@/interfaces/products/IRawProduct"
 import type { FlattenedItem } from "@/interfaces/products/IFlatternProduct"
 
 const ITEMS_PER_PAGE = 20
 
-export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
+export function useInventory(initialProducts: IRawProduct[], stores: IStore[]) {
     const { user } = useAuth()
     const { storeSelected } = useTienda()
     const { rawProducts, setRawProducts, columnFilters, currentPage, setCurrentPage } = inventoryStore()
@@ -22,8 +22,8 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
     const filteredInitialProducts = useMemo(() => {
         if (user?.role === Role.Admin || user?.role === Role.Tercero || !userStoreID) return initialProducts
         return initialProducts.filter((product) =>
-            (product.ProductVariations || []).some((variation) =>
-                variation.StoreProducts?.some((sp) => sp.storeID === userStoreID),
+            (product.variations || []).some((variation) =>
+                variation.storeProducts?.some((sp) => sp.storeID === userStoreID),
             ),
         )
     }, [initialProducts, user?.role, userStoreID])
@@ -42,14 +42,14 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
     const totalStock = result.totalStock
 
     const flattenedProducts = useMemo<FlattenedItem[]>(() => {
-        const flattened: FlattenedItem[] = []
+        const flattened: any[] = []
         filteredProducts.forEach((product) => {
-            const totalStockQuantity = (product.ProductVariations || []).reduce(
-                (total: number, v: { stockQuantity?: number }) => total + (v.stockQuantity || 0),
+            const totalStockQuantity = (product.variations || []).reduce(
+                (total: number, v: any) => total + (v.storeProducts || []).reduce((acc: number, sp: any) => acc + (sp.stock || 0), 0),
                 0,
             )
-            const variationCount = (product.ProductVariations || []).length
-            ;(product.ProductVariations || []).forEach((variation: any, index: number) => {
+            const variationCount = (product.variations || []).length
+            ;(product.variations || []).forEach((variation: any, index: number) => {
                 flattened.push({
                     product,
                     variation,
@@ -125,14 +125,17 @@ export function useInventory(initialProducts: IProduct[], stores: IStore[]) {
     const totalStockShown = useMemo(() => {
         if (user?.role === Role.Admin || user?.role === Role.Tercero) {
             return rawProducts.reduce((total, product) => {
-                const inner = (product.ProductVariations || []).reduce((sum, v: any) => sum + (v.stockQuantity || 0), 0)
+                const inner = (product.variations || []).reduce((sum: number, v: any) => {
+                    const storeProductsStock = (v.storeProducts || []).reduce((acc: number, sp: any) => acc + (sp.stock || 0), 0)
+                    return sum + storeProductsStock
+                }, 0)
                 return total + inner
             }, 0)
         } else if (user?.role === Role.Vendedor && userStoreID) {
             return rawProducts.reduce((total, product) => {
-                const inner = (product.ProductVariations || []).reduce((sum: number, v: any) => {
-                    const storeProduct = v.StoreProducts?.find((sp: any) => sp.storeID === userStoreID)
-                    return sum + (storeProduct ? storeProduct.quantity : 0)
+                const inner = (product.variations || []).reduce((sum: number, v: any) => {
+                    const storeProduct = v.storeProducts?.find((sp: any) => sp.storeID === userStoreID)
+                    return sum + (storeProduct ? storeProduct.stock : 0)
                 }, 0)
                 return total + inner
             }, 0)

@@ -1,6 +1,6 @@
 import { API_URL } from "@/lib/enviroments"
 import { fetcher } from "@/lib/fetcher"
-import { PaymentStatus } from "@/interfaces/sales/ISale"
+import { IUpdateSaleStatus } from "@/interfaces/sales/ISale"
 
 /**
  * Actualiza el estado de una venta específica.
@@ -9,11 +9,11 @@ import { PaymentStatus } from "@/interfaces/sales/ISale"
  * @param id - El ID de la venta.
  * @param status - El nuevo estado de la venta (e.g., "Pagado", "Anulado").
  */
-export const updateSaleStatus = async (id: string, status: PaymentStatus) => {
+export const updateSaleStatus = async (id: string, payload: IUpdateSaleStatus) => {
     try {
         return await fetcher(`${API_URL}/sales/${id}/status`, {
             method: "PATCH",
-            body: JSON.stringify({ status }),
+            body: JSON.stringify(payload),
         })
     } catch (error) {
         console.error(`Error updating status for sale ${id}:`, error)
