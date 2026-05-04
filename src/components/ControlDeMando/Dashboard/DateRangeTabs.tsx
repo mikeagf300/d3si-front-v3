@@ -1,10 +1,15 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 
-export default function DateRangeTabs() {
-    const [dateRange, setDateRange] = useState({ start: "01-01-2020", end: "31-12-2020" })
-    const [activeTab, setActiveTab] = useState("detallado")
+interface DateRangeTabsProps {
+    dateRange: { start: string; end: string }
+    setDateRange: (range: { start: string; end: string }) => void
+    activeTab: string
+    setActiveTab: (tab: string) => void
+}
+
+export default function DateRangeTabs({ dateRange, setDateRange, activeTab, setActiveTab }: DateRangeTabsProps) {
     const tabs = [
         { id: "detallado", label: "Ventas Detallado" },
         { id: "comparadas", label: "Ventas Comparadas" },
