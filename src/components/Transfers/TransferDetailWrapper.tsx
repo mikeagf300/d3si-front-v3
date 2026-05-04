@@ -64,8 +64,8 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
             sku: variation.sku,
             size: variation.sizeNumber,
             stock:
-                variation.StoreProducts?.find((storeProduct) => storeProduct.storeID === transfer.originStoreID)?.quantity ??
-                variation.stockQuantity,
+                variation.StoreProducts?.find((storeProduct) => storeProduct.storeID === transfer.originStoreID)
+                    ?.quantity ?? variation.stockQuantity,
         })),
     )
 
@@ -79,7 +79,9 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
         searchTerm.trim().length > 2
             ? variationCatalog.filter((variation) => {
                   const query = searchTerm.toLowerCase()
-                  return variation.sku.toLowerCase().includes(query) || variation.productName.toLowerCase().includes(query)
+                  return (
+                      variation.sku.toLowerCase().includes(query) || variation.productName.toLowerCase().includes(query)
+                  )
               })
             : []
 
@@ -171,22 +173,27 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">Movimiento entre tiendas</h1>
+                                    <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">
+                                        Movimiento entre tiendas
+                                    </h1>
                                     <p className="max-w-2xl text-sm leading-6 text-slate-300">
-                                        Define la cabecera, agrega variaciones y cierra la transferencia cuando el stock físico ya se
-                                        movió entre origen y destino.
+                                        Define la cabecera, agrega variaciones y cierra la transferencia cuando el stock
+                                        físico ya se movió entre origen y destino.
                                     </p>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
                                     <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                         <Store size={14} />
-                                        Origen: {transfer.originStore?.name || `Tienda ${transfer.originStoreID.slice(0, 4)}`}
+                                        Origen:{" "}
+                                        {transfer.originStore?.name || `Tienda ${transfer.originStoreID.slice(0, 4)}`}
                                     </span>
                                     <ArrowRight size={14} className="text-slate-500" />
                                     <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                         <Store size={14} />
-                                        Destino: {transfer.destinationStore?.name || `Tienda ${transfer.destinationStoreID.slice(0, 4)}`}
+                                        Destino:{" "}
+                                        {transfer.destinationStore?.name ||
+                                            `Tienda ${transfer.destinationStoreID.slice(0, 4)}`}
                                     </span>
                                 </div>
                             </div>
@@ -218,7 +225,10 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
 
             <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
                 {isPending ? (
-                    <Card id="add-products" className="flex min-h-0 flex-col border-slate-200/80 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
+                    <Card
+                        id="add-products"
+                        className="flex min-h-0 flex-col border-slate-200/80 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950"
+                    >
                         <CardHeader className="space-y-3 border-b border-slate-100 pb-5 dark:border-slate-800">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
@@ -294,7 +304,8 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                                 Busca una variación para agregarla a esta transferencia
                                             </p>
                                             <p className="text-xs text-slate-500">
-                                                Usa nombre del producto o SKU. Se mostrarán solo coincidencias desde la tienda origen.
+                                                Usa nombre del producto o SKU. Se mostrarán solo coincidencias desde la
+                                                tienda origen.
                                             </p>
                                         </div>
                                     </div>
@@ -316,10 +327,14 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                                         Seleccionado
                                                     </Badge>
                                                     <span className="text-xs text-slate-500">
-                                                        Origen: {transfer.originStore?.name || transfer.originStoreID.slice(0, 8)}
+                                                        Origen:{" "}
+                                                        {transfer.originStore?.name ||
+                                                            transfer.originStoreID.slice(0, 8)}
                                                     </span>
                                                 </div>
-                                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{selectedVariation.name}</h3>
+                                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                                                    {selectedVariation.name}
+                                                </h3>
                                                 <div className="flex flex-wrap gap-2 text-xs">
                                                     <Badge variant="outline" className="rounded-full">
                                                         Talla {selectedVariation.size || "-"}
@@ -376,14 +391,6 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                                 </Button>
                                             </div>
                                         </div>
-
-                                        <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-                                            <Info size={14} className="mt-0.5 shrink-0" />
-                                            <p>
-                                                La validación visual bloquea cantidades sobre el stock disponible en origen, pero el backend sigue
-                                                siendo la fuente de verdad.
-                                            </p>
-                                        </div>
                                     </div>
                                 ) : (
                                     <div className="flex h-44 items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 px-6 text-center dark:border-slate-800 dark:bg-slate-900/40">
@@ -423,8 +430,15 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
                                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Detalle</p>
                                 <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                                    <p>Origen: {transfer.originStore?.name || `Tienda ${transfer.originStoreID.slice(0, 4)}`}</p>
-                                    <p>Destino: {transfer.destinationStore?.name || `Tienda ${transfer.destinationStoreID.slice(0, 4)}`}</p>
+                                    <p>
+                                        Origen:{" "}
+                                        {transfer.originStore?.name || `Tienda ${transfer.originStoreID.slice(0, 4)}`}
+                                    </p>
+                                    <p>
+                                        Destino:{" "}
+                                        {transfer.destinationStore?.name ||
+                                            `Tienda ${transfer.destinationStoreID.slice(0, 4)}`}
+                                    </p>
                                     <p>Items transferidos: {transfer.items.length}</p>
                                     <p>Unidades totales: {totalUnits}</p>
                                 </div>
@@ -476,7 +490,8 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                                     Aún no hay productos agregados
                                                 </p>
                                                 <p className="text-sm text-slate-500">
-                                                    Busca una variación en el panel lateral y suma las cantidades a transferir.
+                                                    Busca una variación en el panel lateral y suma las cantidades a
+                                                    transferir.
                                                 </p>
                                             </div>
                                         </div>
@@ -496,11 +511,15 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                                                 {transfer.items.map((item) => {
                                                     const variation = variationIndex.get(item.variationID)
                                                     return (
-                                                        <TableRow key={item.transferItemID} className="border-slate-100 dark:border-slate-800">
+                                                        <TableRow
+                                                            key={item.transferItemID}
+                                                            className="border-slate-100 dark:border-slate-800"
+                                                        >
                                                             <TableCell className="py-4">
                                                                 <div className="space-y-1">
                                                                     <p className="font-medium text-slate-900 dark:text-white">
-                                                                        {variation?.productName || `Variación ${item.variationID.slice(0, 8)}`}
+                                                                        {variation?.productName ||
+                                                                            `Variación ${item.variationID.slice(0, 8)}`}
                                                                     </p>
                                                                     <p className="text-xs text-slate-500">
                                                                         ID: {item.transferItemID.slice(0, 8)}
@@ -538,9 +557,12 @@ export default function TransferDetailWrapper({ initialTransfer, products }: Pro
                             <CheckCircle2 size={18} />
                         </div>
                         <div>
-                            <p className="font-medium text-slate-900 dark:text-white">Listo para cerrar la transferencia</p>
+                            <p className="font-medium text-slate-900 dark:text-white">
+                                Listo para cerrar la transferencia
+                            </p>
                             <p className="text-sm text-slate-500">
-                                Revisa las líneas agregadas y confirma el movimiento físico cuando el stock ya salió del origen.
+                                Revisa las líneas agregadas y confirma el movimiento físico cuando el stock ya salió del
+                                origen.
                             </p>
                         </div>
                     </div>

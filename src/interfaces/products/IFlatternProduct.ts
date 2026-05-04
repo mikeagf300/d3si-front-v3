@@ -1,4 +1,4 @@
-import { IProduct } from "./IProduct"
+import type { IProductVariationRaw, IRawProduct } from "./IRawProduct"
 
 export interface FlattenedProduct {
     id: string
@@ -14,8 +14,8 @@ export interface FlattenedProduct {
 }
 
 export interface FlattenedItem {
-    product: IProduct
-    variation: IProduct["ProductVariations"][number]
+    product: IRawProduct
+    variation: IProductVariationRaw
     isFirst: boolean
     totalStock: number
     rowSpan: number

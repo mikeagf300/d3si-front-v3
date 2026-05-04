@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { Tag } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
@@ -18,17 +17,26 @@ import { findProductBySku } from "@/utils/findProductBySku"
 import { toPrice } from "@/utils/priceFormat"
 import { PrintbarcodeModal } from "./PrintBarcodeModal"
 import { useState } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { IProductVariation } from "@/interfaces/products/IProductVariation"
+import type { FlattenedItem } from "@/interfaces/products/IFlatternProduct"
+import type { IProduct } from "@/interfaces/products/IProduct"
+import type { IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { PricingModal } from "./PricingModal"
 
 interface InventoryTableProps {
-    currentItems: any[]
-    handleSaveEdit: (product: any, variationID?: string) => void
-    handleDeleteProduct: (product: any) => void
+    currentItems: FlattenedItem[]
+    handleSaveEdit: (product: IRawProduct, variationID?: string) => void
+    handleDeleteProduct: (product: IRawProduct) => void
     adminStoreIDs: string[]
     categories: ICategory[]
 }
+
+type PricingVariationState = {
+    product: IRawProduct
+    variation: IProductVariationRaw
+} | null
 
 const calculateMarkup = (priceCost: number, priceList: number): string => {
     if (priceCost === 0) return "N/A"
@@ -51,10 +59,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
     const { searchParams } = useQueryParams()
     const storeID = searchParams.get("storeID") || storeSelected?.storeID || null
     const [openSku, setOpenSku] = useState<string | null>(null)
-    const [pricingVariation, setPricingVariation] = useState<{
-        product: IRawProduct
-        variation: IProductVariationRaw
-    } | null>(null)
+    const [pricingVariation, setPricingVariation] = useState<PricingVariationState>(null)
     const printBarcodeModal = (sku: string | null) => {
         setOpenSku(sku)
     }
@@ -102,19 +107,16 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
 
                         <TableBody>
                             {currentItems.map(({ product, variation, isFirst, totalStock }, index) => {
-                                const productData = findProductBySku([product as any], storeID!, variation.sku)
-                                // Stock agregado = suma de storeProducts en sucursales (no admin)
-                                const storeFilter = variation.storeProducts?.filter(
-                                    (sp: any) => !sp.store?.isCentralStore && !sp.Store?.isCentralStore,
-                                )
+                                const productData = findProductBySku([product], storeID!, variation.sku)
+                                const storeFilter = variation.storeProducts?.filter((sp) => !sp.store?.isCentralStore)
                                 const stockAgregado =
-                                    variation.storeProducts?.reduce((sum: number, sp: any) => {
-                                        if (sp.storeID !== storeID) return sum + (sp.stock || 0)
+                                    variation.storeProducts?.reduce((sum: number, sp) => {
+                                        if (!sp.store?.isCentralStore) return sum + (sp.stock || 0)
                                         return sum
                                     }, 0) ?? 0
 
                                 const currentSp =
-                                    variation.storeProducts?.find((sp: any) => sp.storeID === storeID) ||
+                                    variation.storeProducts?.find((sp) => sp.storeID === storeID) ||
                                     variation.storeProducts?.[0]
                                 const priceCost = currentSp?.priceCost || 0
                                 const priceList = currentSp?.priceList || 0
@@ -156,11 +158,9 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                             <div className="flex justify-center gap-2 mt-2">
                                                                 <span className="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full font-medium">
                                                                     {product.variations?.reduce(
-                                                                        (prev: number, v: any) => {
-                                                                            const vStock = (
-                                                                                v.storeProducts || []
-                                                                            ).reduce(
-                                                                                (acc: number, sp: any) =>
+                                                                        (prev: number, v: IProductVariationRaw) => {
+                                                                            const vStock = v.storeProducts.reduce(
+                                                                                (acc: number, sp) =>
                                                                                     acc + (sp.stock || 0),
                                                                                 0,
                                                                             )
@@ -320,9 +320,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-1">
-                                                    <span className="font-semibold text-sm">
-                                                        ${toPrice(priceList)}
-                                                    </span>
+                                                    <span className="font-semibold text-sm">${toPrice(priceList)}</span>
                                                     <span
                                                         className={`text-xs ${
                                                             profitMargin > 30
@@ -447,11 +445,16 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     {storeFilter && storeFilter.length > 0 ? (
-                                                        storeFilter.map((sp: any) => (
-                                                            <p key={sp.storeID}>
-                                                                {sp.store?.name || sp.Store?.name}: {sp.stock || 0}
-                                                            </p>
-                                                        ))
+                                                        <div className="space-y-1 text-left">
+                                                            {storeFilter.map((sp) => (
+                                                                <p
+                                                                    key={`${sp.storeProductID}-${sp.storeID}`}
+                                                                    className="whitespace-nowrap"
+                                                                >
+                                                                    {sp.store?.name || sp.Store?.name}: {sp.stock || 0}
+                                                                </p>
+                                                            ))}
+                                                        </div>
                                                     ) : (
                                                         <p>No hay stock en ninguna tienda</p>
                                                     )}
@@ -481,20 +484,20 @@ function PricingModalWrapper({
     setPricingVariation,
     storeID,
 }: {
-    pricingVariation: { product: any; variation: any } | null
-    setPricingVariation: (v: null) => void
+    pricingVariation: PricingVariationState
+    setPricingVariation: Dispatch<SetStateAction<PricingVariationState>>
     storeID: string | null
 }) {
     if (!pricingVariation || !storeID) return null
     const { product, variation } = pricingVariation
-    const storeProduct = variation.storeProducts?.find((sp: any) => sp.storeID === storeID)
+    const storeProduct = variation.storeProducts?.find((sp) => sp.storeID === storeID)
     return (
         <PricingModal
             isOpen
             onClose={() => setPricingVariation(null)}
-            product={product}
-            variation={variation}
-            storeProduct={storeProduct}
+            product={product as unknown as IProduct}
+            variation={variation as unknown as IProductVariation}
+            storeProduct={storeProduct as unknown as IStoreProduct}
             storeID={storeID}
         />
     )
