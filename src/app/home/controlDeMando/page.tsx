@@ -3,7 +3,6 @@ import MayoristaSection from "@/components/ControlDeMando/Dashboard/MayoristaSec
 import SalesEvolutionChart from "@/components/ControlDeMando/Dashboard/SalesEvolutionChart"
 import StatisticsGrid from "@/components/ControlDeMando/Dashboard/StatisticsGrid"
 import WebRankingSection from "@/components/ControlDeMando/Dashboard/WebRankingSection"
-import React from "react"
 
 export default async function ControlDashboard() {
     return (
@@ -16,19 +15,19 @@ export default async function ControlDashboard() {
                     {/* Grid principal - Mobile First */}
                     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-7 gap-4 md:gap-6">
                         {/* Columna izquierda - Estadísticas */}
-                        <StatisticsGrid />
+                        {/* <StatisticsGrid /> */}
 
                         {/* Gráfico de evolución */}
-                        <SalesEvolutionChart />
+                        {/* <SalesEvolutionChart /> */}
                     </div>
 
                     {/* Segundo grid - Mobile First */}
                     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-5 gap-4 md:gap-8 mt-6">
                         {/* Ranking Ventas Canal Web */}
-                        <WebRankingSection />
+                        {/* <WebRankingSection /> */}
 
                         {/* Sección Mayorista */}
-                        <MayoristaSection />
+                        {/* <MayoristaSection /> */}
                     </div>
                 </div>
             </div>

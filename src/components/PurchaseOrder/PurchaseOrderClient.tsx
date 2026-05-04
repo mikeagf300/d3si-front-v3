@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import type { IProduct } from "@/interfaces/products/IProduct"
 import type { IStore } from "@/interfaces/stores/IStore"
 import { Input } from "@/components/ui/input"
@@ -51,6 +51,10 @@ export default function PurchaseOrderClient({
 
     const { setRawProducts } = inventoryStore()
     const { addOrUpdatePedido, pedido } = usePedidoOC()
+
+    // Refs para capturar valores iniciales sin causar loops en useEffect
+    const initialProductsRef = useRef(initialProducts)
+    const initialStoresRef = useRef(initialStores)
 
     // 1. Filtrar productos por tienda seleccionada
     const filteredByStore = useMemo(() => {
@@ -211,15 +215,18 @@ export default function PurchaseOrderClient({
     }, [search, selectedFilter, sortDirection, selectedGenre, isTercero, orderByMarkup])
 
     useEffect(() => {
-        setRawProducts(initialProducts)
+        setRawProducts(initialProductsRef.current)
         setSelectedFilter("genre")
-    }, [initialProducts, setRawProducts, setSelectedFilter])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         return () => {
-            setStoreSelected(initialStores[0])
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            setStoreSelected(initialStoresRef.current[0])
         }
-    }, [initialStores, setStoreSelected])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     return (
         <>

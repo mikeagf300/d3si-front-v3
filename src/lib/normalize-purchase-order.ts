@@ -48,7 +48,9 @@ export type RawPurchaseOrder = {
     PurchaseOrderItems?: RawPurchaseOrderItem[]
 }
 
-const normalizeVariation = (raw: RawPurchaseOrderVariation | null | undefined): IProductVariation & { Product: IProduct } => ({
+const normalizeVariation = (
+    raw: RawPurchaseOrderVariation | null | undefined,
+): IProductVariation & { Product: IProduct } => ({
     variationID: raw?.variationID ?? "",
     productID: raw?.productID ?? "",
     sizeNumber: raw?.sizeNumber ?? "",
@@ -60,21 +62,23 @@ const normalizeVariation = (raw: RawPurchaseOrderVariation | null | undefined): 
     updatedAt: raw?.updatedAt ?? "",
     Stores: raw?.Stores ?? [],
     StoreProducts: raw?.StoreProducts ?? [],
-    Product: raw?.Product ?? ({
-        productID: raw?.productID ?? "",
-        image: "",
-        brand: "Otro",
-        genre: "Unisex",
-        description: "",
-        wooID: null,
-        totalProducts: 0,
-        createdAt: raw?.createdAt ?? "",
-        updatedAt: raw?.updatedAt ?? "",
-        ProductVariations: [],
-        categoryID: null,
-        stock: 0,
-        name: "",
-    } as IProduct),
+    Product:
+        raw?.Product ??
+        ({
+            productID: raw?.productID ?? "",
+            image: "",
+            brand: "Otro",
+            genre: "Unisex",
+            description: "",
+            wooID: null,
+            totalProducts: 0,
+            createdAt: raw?.createdAt ?? "",
+            updatedAt: raw?.updatedAt ?? "",
+            ProductVariations: [],
+            categoryID: null,
+            stock: 0,
+            name: "",
+        } as IProduct),
 })
 
 const normalizeItem = (raw: RawPurchaseOrderItem) => ({
@@ -111,5 +115,11 @@ export const normalizePurchaseOrder = (raw: RawPurchaseOrder): IPurchaseOrder =>
         updatedAt: raw.updatedAt ?? "",
         Store: store ? normalizeStore(store) : undefined,
         PurchaseOrderItems: items.map(normalizeItem),
+        folio: raw.folio ?? "",
+        issueDate: raw.issueDate ?? "",
+        subtotal: Number(raw.subtotal ?? 0),
+        netTotal: Number(raw.netTotal ?? 0),
+        tax: Number(raw.tax ?? 0),
+        totalProducts: Number(raw.totalProducts ?? items.length),
     }
 }

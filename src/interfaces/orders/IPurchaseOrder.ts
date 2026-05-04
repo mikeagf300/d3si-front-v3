@@ -38,22 +38,32 @@ export interface IUpdatePurchaseOrder {
     isThirdParty?: boolean
     storeID?: string
     status?: PurchaseOrderStatus
+    items?: IPurchaseOrderItem[]
 }
 
 export interface IPurchaseOrder {
     purchaseOrderID: string
+    folio: string
     storeID: string
     userID: string
     total: number
     status: PurchaseOrderStatus
     paymentStatus: string
     isThirdParty: boolean
+    issueDate: string
     dueDate: string
     dteNumber: string
+    totalProducts: number
+    subtotal: number
     discount: number
+    netTotal: number
+    tax: number
     createdAt: string
     updatedAt: string
+    store?: IStore
+    /** @deprecated use store.name */
     Store?: IStore
+    items?: any[]
     PurchaseOrderItems?: (IPurchaseOrderItem & { variation: IProductVariation & { Product: IProduct } })[]
 }
 

@@ -37,10 +37,7 @@ export default function TransfersClientWrapper({ initialTransfers, stores, initi
     const [status, setStatus] = useState(initialFilters.status ?? ALL_VALUE)
 
     const getStoreName = (id: string) => stores.find((s) => s.storeID === id)?.name || "Desconocida"
-    const storeOptions = useMemo(
-        () => [{ storeID: ALL_VALUE, name: "Todas las tiendas" }, ...stores],
-        [stores],
-    )
+    const storeOptions = useMemo(() => [{ storeID: ALL_VALUE, name: "Todas las tiendas" }, ...stores], [stores])
     const currentPage = paginationMeta.page || transferListDefaults.page
     const currentLimit = paginationMeta.limit || transferListDefaults.limit
     const totalPages = Math.max(paginationMeta.totalPages || Math.ceil((paginationMeta.total || 0) / currentLimit), 1)
@@ -93,7 +90,10 @@ export default function TransfersClientWrapper({ initialTransfers, stores, initi
                             <RotateCcw size={16} />
                             Limpiar filtros
                         </Button>
-                        <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                        <Button
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                        >
                             <Plus size={18} />
                             Nueva Transferencia
                         </Button>
@@ -149,7 +149,6 @@ export default function TransfersClientWrapper({ initialTransfers, stores, initi
                             </SelectContent>
                         </Select>
                     </div>
-
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -217,12 +216,12 @@ export default function TransfersClientWrapper({ initialTransfers, stores, initi
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => router.push(`/home/transfers/${t.transferID}`)}
-                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                        >
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => router.push(`/home/transfers/${t.transferID}`)}
+                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                            >
                                                 <Eye size={18} className="mr-1" />
                                                 Gestionar
                                             </Button>

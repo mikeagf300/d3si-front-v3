@@ -40,9 +40,7 @@ export async function getAllTransfers(filters: ITransferListFilters = {}): Promi
     try {
         const raw = await fetcher<RawTransferListResponse>(url)
 
-        const rawItems = Array.isArray(raw)
-            ? raw
-            : raw?.data ?? raw?.items ?? raw?.transfers ?? []
+        const rawItems = Array.isArray(raw) ? raw : (raw?.data ?? raw?.items ?? raw?.transfers ?? [])
 
         const items = Array.isArray(rawItems) ? rawItems.map(normalizeTransfer) : []
         const meta = Array.isArray(raw)
@@ -61,12 +59,18 @@ export async function getAllTransfers(filters: ITransferListFilters = {}): Promi
                   totalPages:
                       raw?.meta?.totalPages ??
                       raw?.totalPages ??
-                      Math.ceil((raw?.meta?.total ?? raw?.total ?? items.length) / (raw?.meta?.limit ?? raw?.limit ?? filters.limit ?? DEFAULT_META.limit)),
+                      Math.ceil(
+                          (raw?.meta?.total ?? raw?.total ?? items.length) /
+                              (raw?.meta?.limit ?? raw?.limit ?? filters.limit ?? DEFAULT_META.limit),
+                      ),
               }
 
         return { items, meta }
     } catch (error) {
         console.log(error)
-        return { items: [], meta: { ...DEFAULT_META, page: filters.page ?? 1, limit: filters.limit ?? 20, totalPages: 0 } }
+        return {
+            items: [],
+            meta: { ...DEFAULT_META, page: filters.page ?? 1, limit: filters.limit ?? 20, totalPages: 0 },
+        }
     }
 }

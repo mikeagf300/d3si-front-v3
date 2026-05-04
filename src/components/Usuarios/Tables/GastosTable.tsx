@@ -178,8 +178,11 @@ export default function GastosTable() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {gastosFiltrados.map((gasto) => (
-                                <TableRow key={gasto.expenseID} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                            {gastosFiltrados.map((gasto, idx) => (
+                                <TableRow
+                                    key={gasto.expenseID ?? `gasto-${idx}`}
+                                    className="hover:bg-gray-50 dark:hover:bg-slate-700"
+                                >
                                     <TableCell className="font-medium text-gray-900 dark:text-white">
                                         {gasto.name}
                                     </TableCell>
