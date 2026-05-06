@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTienda } from "@/stores/tienda.store"
 import { getSales } from "@/actions/sales/getSales"
+import { getWooOrdersForRange } from "@/actions/woocommerce/getWooOrder"
+import { mapWooOrderToSale } from "@/utils/mappers/woocommerceToSale"
 import { getResume } from "@/actions/totals/getResume"
 import { getMetaMensual } from "@/actions/totals/getMetaMensual"
 import { getAllProducts } from "@/actions/products/getAllProducts"
@@ -60,14 +62,24 @@ function filterByDateRange(sales: ISaleResponse[], start: string, end: string): 
     })
 }
 
-function classifyChannel(storeType?: string): "web" | "mayorista" | "presencial" {
-    const t = (storeType ?? "").toLowerCase()
-    if (t === "web") return "web"
-    if (t === "mayorista" || t.includes("mayor")) return "mayorista"
+function classifyChannel(sale: ISaleResponse): "web" | "mayorista" | "presencial" {
+    const role = ((sale.Store as any)?.role ?? "").toLowerCase()
+    const sid = (sale.storeID ?? "").toLowerCase()
+
+    // Canal Web: solo órdenes WooCommerce
+    if (sid === "web" || role === "web") return "web"
+
+    // Canal Mayorista: tiendas propias (type === "central")
+    const type = (sale.Store?.type ?? "").toLowerCase()
+    if (type === "central") return "mayorista"
+
     return "presencial"
 }
 
-function buildStats(resume: IResume): DashboardStat[] {
+function buildStats(resume: IResume, filteredSales: ISaleResponse[]): DashboardStat[] {
+    const periodTotal = filteredSales.filter((s) => s.status !== "Anulado").reduce((acc, s) => acc + s.total, 0)
+    const periodCount = filteredSales.filter((s) => s.status !== "Anulado").length
+
     return [
         {
             id: "today",
@@ -93,15 +105,15 @@ function buildStats(resume: IResume): DashboardStat[] {
         {
             id: "month",
             icon: "FileText",
-            label: "Ventas del Mes",
-            value: CLP.format(resume.periodSummary.month.total),
+            label: "Ventas del Per\u00edodo",
+            value: CLP.format(periodTotal),
             color: "text-purple-500",
         },
         {
             id: "month-count",
             icon: "Users",
-            label: "Trans. del Mes",
-            value: String(resume.periodSummary.month.count),
+            label: "Trans. del Per\u00edodo",
+            value: String(periodCount),
             color: "text-pink-500",
         },
     ]
@@ -111,6 +123,8 @@ function buildEvolutionData(sales: ISaleResponse[]): {
     data: SalesEvolutionPoint[]
     mayoristaShare: number
     webShare: number
+    webTotal: number
+    mayoristaTotal: number
 } {
     const now = new Date()
     const months: SalesEvolutionPoint[] = []
@@ -131,7 +145,7 @@ function buildEvolutionData(sales: ISaleResponse[]): {
             if (sale.status === "Anulado") continue
             const meta = getChileDateMeta(new Date(sale.createdAt))
             if (meta.year === year && meta.month === month) {
-                const channel = classifyChannel(sale.Store?.type)
+                const channel = classifyChannel(sale)
                 if (channel === "web") web += sale.total
                 else if (channel === "mayorista") mayorista += sale.total
                 else presencial += sale.total
@@ -147,7 +161,7 @@ function buildEvolutionData(sales: ISaleResponse[]): {
     const mayoristaShare = grandTotal > 0 ? Math.round((totalMayorista / grandTotal) * 100) : 0
     const webShare = grandTotal > 0 ? Math.round((totalWeb / grandTotal) * 100) : 0
 
-    return { data: months, mayoristaShare, webShare }
+    return { data: months, mayoristaShare, webShare, webTotal: totalWeb, mayoristaTotal: totalMayorista }
 }
 
 function buildWebRanking(
@@ -162,7 +176,7 @@ function buildWebRanking(
     for (const sale of sales) {
         if (sale.status === "Anulado") continue
         grandTotal += sale.total
-        if (classifyChannel(sale.Store?.type) !== "web") continue
+        if (classifyChannel(sale) !== "web") continue
         webTotal += sale.total
         for (const sp of sale.SaleProducts) {
             const name = productMap.get(sp.variation?.productID) ?? sp.variation?.sku ?? "Producto"
@@ -188,7 +202,7 @@ function buildMayoristaData(
 
     for (const sale of sales) {
         if (sale.status === "Anulado") continue
-        if (classifyChannel(sale.Store?.type) !== "mayorista") continue
+        if (classifyChannel(sale) !== "mayorista") continue
         salesTotal += sale.total
         const name = sale.Store?.name ?? "Tienda"
         storeTotals.set(name, (storeTotals.get(name) ?? 0) + sale.total)
@@ -219,15 +233,22 @@ export default function ControlDashboardClient() {
         setLoading(true)
         try {
             const todayStr = getChileYYYYMMDD(new Date())
-            const [resumeData, salesData, productsData, categoriesData, metaData] = await Promise.all([
+            const now = new Date()
+            const yearStart = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1, 0, 0, 0, 0)
+            const yearEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+
+            const [resumeData, salesData, productsData, categoriesData, metaData, wooOrdersData] = await Promise.all([
                 getResume(storeSelected.storeID, todayStr),
-                getSales(storeSelected.storeID),
+                getSales(), // Sin filtro de tienda para análisis multi-canal
                 getAllProducts(),
                 getAllCategories(),
                 getMetaMensual(storeSelected.storeID),
+                getWooOrdersForRange(yearStart, yearEnd),
             ])
+            const wooSales = Array.isArray(wooOrdersData) ? wooOrdersData.map(mapWooOrderToSale) : []
+            const dbSales = Array.isArray(salesData) ? salesData : []
             setResume(resumeData ?? EMPTY_RESUME)
-            setAllSales(Array.isArray(salesData) ? salesData : [])
+            setAllSales([...dbSales, ...wooSales])
             setProducts(Array.isArray(productsData) ? productsData : [])
             setCategories(Array.isArray(categoriesData) ? categoriesData : [])
             setGoalTotal(typeof metaData === "number" ? metaData : 0)
@@ -244,8 +265,14 @@ export default function ControlDashboardClient() {
 
     const filteredSales = filterByDateRange(allSales, dateRange.start, dateRange.end)
 
-    const stats = buildStats(resume)
-    const { data: evolutionData, mayoristaShare, webShare } = buildEvolutionData(filteredSales)
+    const stats = buildStats(resume, filteredSales)
+    const {
+        data: evolutionData,
+        mayoristaShare,
+        webShare,
+        webTotal,
+        mayoristaTotal,
+    } = buildEvolutionData(filteredSales)
     const { items: webItems, percentage: webPct } = buildWebRanking(filteredSales, products)
     const { topStores, salesTotal } = buildMayoristaData(filteredSales, goalTotal)
 
@@ -283,6 +310,8 @@ export default function ControlDashboardClient() {
                                     data={evolutionData}
                                     mayoristaShare={mayoristaShare}
                                     webShare={webShare}
+                                    webTotal={webTotal}
+                                    mayoristaTotal={mayoristaTotal}
                                 />
                             </div>
 
