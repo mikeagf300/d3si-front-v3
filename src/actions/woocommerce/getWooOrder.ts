@@ -26,6 +26,32 @@ export const getWooCommerceOrders = async (date: Date): Promise<WooCommerceOrder
     }
 }
 
+/**
+ * Obtiene todas las órdenes de WooCommerce en un rango de fechas arbitrario.
+ * Usa paginación para obtener hasta 100 órdenes por página.
+ */
+export const getWooOrdersForRange = async (after: Date, before: Date): Promise<WooCommerceOrder[]> => {
+    try {
+        const afterISO = after.toISOString()
+        const beforeISO = before.toISOString()
+        const params = new URLSearchParams({
+            after: afterISO,
+            before: beforeISO,
+            per_page: "100",
+            page: "1",
+        })
+        const orders = await wooFetcher<WooCommerceOrder[]>(`orders?${params.toString()}`)
+        if (!Array.isArray(orders)) {
+            console.warn("getWooOrdersForRange: La respuesta no es un array:", orders)
+            return []
+        }
+        return orders
+    } catch (error) {
+        console.error("getWooOrdersForRange:", error)
+        return []
+    }
+}
+
 export const getWooSingleOrder = async (saleID: string): Promise<WooCommerceOrder | null> => {
     try {
         const order = await wooFetcher<WooCommerceOrder>(`orders/${saleID}`)

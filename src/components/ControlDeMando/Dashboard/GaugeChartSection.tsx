@@ -10,7 +10,7 @@ const DynamicGaugeChart = dynamic(() => import("@/components/Caja/TotalSalesResu
 
 export default function GaugeChartSection({ resume }: { resume: IResume }) {
     return (
-        <div className="lg:col-span-4 lg:mb-0 mb-10 lg:row-span-4 lg:col-start-4">
+        <div>
             <Card className="dark:bg-gray-800 border-0 shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-center relative dark:text-white text-sm md:text-base">

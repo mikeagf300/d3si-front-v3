@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
             },
             {
                 protocol: "https",
+                hostname: "*.bing.net",
+            },
+            {
+                protocol: "https",
                 hostname: "*.vtexassets.com",
             },
             {

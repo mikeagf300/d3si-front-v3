@@ -13,7 +13,7 @@ export default function WebRankingSection({ items, percentage }: { items: WebRan
     const maxValue = Math.max(...items.map((item) => item.valor), 1)
 
     return (
-        <div className="lg:col-span-4 lg:row-span-5">
+        <div>
             <Card className="dark:bg-gray-800 border-0 shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-sm dark:text-white">Ranking Ventas Canal Web {percentage}%</CardTitle>

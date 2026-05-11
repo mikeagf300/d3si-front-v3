@@ -33,39 +33,44 @@ export interface SalesEvolutionPoint {
     web: number
 }
 
+const CLP = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
+
 export default function SalesEvolutionChart({
     data,
     mayoristaShare,
     webShare,
+    webTotal,
+    mayoristaTotal,
 }: {
     data: SalesEvolutionPoint[]
     mayoristaShare: number
     webShare: number
+    webTotal: number
+    mayoristaTotal: number
 }) {
     return (
-        <div className="lg:col-span-9 lg:row-span-3 relative lg:col-start-4 lg:row-start-5">
-            {/* Headers del gráfico - Solo en desktop */}
-            <div className="hidden lg:flex lg:absolute lg:-top-20 left-0 text-sm gap-3">
-                <div className="flex text-center rounded-md dark:bg-gray-800 border-0 shadow-lg py-2 px-6">
-                    <div className="flex flex-col">
-                        <span className="text-green-600">Ranking Ventas</span>
-                        <span className="text-green-600">Canal Mayorista</span>
-                    </div>
-                    <span className="font-medium mt-3 ml-2 dark:text-white">{mayoristaShare}%</span>
-                </div>
-                <div className="flex text-center rounded-md dark:bg-gray-800 border-0 shadow-lg py-2 px-6">
-                    <div className="flex flex-col">
-                        <span className="text-blue-600">Ranking Ventas</span>
-                        <span className="text-blue-600">Canal Web</span>
-                    </div>
-                    <span className="font-medium mt-3 ml-2 dark:text-white">{webShare}%</span>
-                </div>
-            </div>
+        <div>
             <Card className="dark:bg-gray-800 border-0 shadow-lg">
                 <CardHeader>
-                    <CardTitle className="text-xs md:text-sm dark:text-white">
-                        Evolución de Ventas Totales últimos 12 meses / Meta
-                    </CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <CardTitle className="text-xs md:text-sm dark:text-white">
+                            Evolución de Ventas Totales últimos 12 meses / Meta
+                        </CardTitle>
+                        <div className="flex gap-2 flex-wrap">
+                            <div className="flex flex-col text-center rounded-md bg-orange-50 dark:bg-gray-700 py-1.5 px-4">
+                                <span className="text-orange-500 font-medium text-xs">Canal Mayorista</span>
+                                <span className="font-bold dark:text-white text-sm">{CLP.format(mayoristaTotal)}</span>
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">
+                                    {mayoristaShare}% del total
+                                </span>
+                            </div>
+                            <div className="flex flex-col text-center rounded-md bg-blue-50 dark:bg-gray-700 py-1.5 px-4">
+                                <span className="text-blue-600 font-medium text-xs">Canal Web</span>
+                                <span className="font-bold dark:text-white text-sm">{CLP.format(webTotal)}</span>
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">{webShare}% del total</span>
+                            </div>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer className="h-50 md:h-62.5 w-full" config={chartConfig}>

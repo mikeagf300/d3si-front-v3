@@ -67,18 +67,27 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
     }, [])
 
     function handleDeleteProduct(product: any) {
-        const confirm = window.confirm(
-            `¿Estás seguro de que deseas eliminar el producto "${product.name}"? Esta acción no se puede revertir.`,
-        )
-        if (!confirm) return
-
-        toast.promise(deleteProduct(product.productID), {
-            loading: "Eliminando producto...",
-            success: () => {
-                setRawProducts(rawProducts.filter((p) => p.productID !== product.productID))
-                return "Producto eliminado con éxito"
+        const variationCount = product.variations?.length ?? 0
+        toast.warning(`¿Eliminar "${product.name}"?`, {
+            description: `Se eliminarán el producto y ${variationCount} variación${variationCount !== 1 ? "es" : ""}. Esta acción no se puede revertir.`,
+            duration: 10000,
+            action: {
+                label: "Sí, eliminar",
+                onClick: () => {
+                    toast.promise(deleteProduct(product.productID), {
+                        loading: "Eliminando producto...",
+                        success: () => {
+                            setRawProducts(rawProducts.filter((p) => p.productID !== product.productID))
+                            return "Producto eliminado con éxito"
+                        },
+                        error: "Hubo un error al eliminar el producto",
+                    })
+                },
             },
-            error: "Hubo un error al eliminar el producto",
+            cancel: {
+                label: "Cancelar",
+                onClick: () => {},
+            },
         })
     }
 
@@ -98,7 +107,8 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
                 brand: isEditingBrand ? editValue : isProductBrand ? product.brand : "Otro",
                 categoryID: isEmptyCategory ? null : product.categoryID,
                 sizes: product.variations.map((v: any) => {
-                    const sp = v.storeProducts?.find((s: any) => s.storeID === storeSelected?.storeID) || v.storeProducts?.[0]
+                    const sp =
+                        v.storeProducts?.find((s: any) => s.storeID === storeSelected?.storeID) || v.storeProducts?.[0]
                     return {
                         sku: v.sku,
                         sizeNumber: v.size,
@@ -124,7 +134,9 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
 
         const variation = product.variations.find((v: any) => v.variationID === variationID)
         if (!variation) return
-        const sp = variation.storeProducts?.find((s: any) => s.storeID === storeSelected?.storeID) || variation.storeProducts?.[0]
+        const sp =
+            variation.storeProducts?.find((s: any) => s.storeID === storeSelected?.storeID) ||
+            variation.storeProducts?.[0]
         const currentStock = sp?.stock || 0
         const currentPriceList = sp?.priceList || 0
         const currentPriceCost = sp?.priceCost || 0
@@ -183,11 +195,17 @@ export default function UnifiedInventoryClientWrapper({ initialProducts, categor
                                                         s.storeID === storeSelected?.storeID
                                                             ? {
                                                                   ...s,
-                                                                  ...(field === "stockQuantity" ? { stock: Number(editValue) } : {}),
-                                                                  ...(field === "priceList" ? { priceList: Number(editValue) } : {}),
-                                                                  ...(field === "priceCost" ? { priceCost: Number(editValue) } : {}),
+                                                                  ...(field === "stockQuantity"
+                                                                      ? { stock: Number(editValue) }
+                                                                      : {}),
+                                                                  ...(field === "priceList"
+                                                                      ? { priceList: Number(editValue) }
+                                                                      : {}),
+                                                                  ...(field === "priceCost"
+                                                                      ? { priceCost: Number(editValue) }
+                                                                      : {}),
                                                               }
-                                                            : s
+                                                            : s,
                                                     ),
                                                 }
                                               : v,

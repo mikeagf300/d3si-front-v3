@@ -43,7 +43,7 @@ export default function ProductRanking({ initialProducts, categories }: Props) {
     }
 
     return (
-        <div className="lg:col-span-5 lg:row-span-4 lg:col-start-8">
+        <div>
             <Card className="dark:bg-gray-800 border-0 shadow-lg">
                 <CardHeader>
                     <CardTitle className="dark:text-white text-sm md:text-base">
