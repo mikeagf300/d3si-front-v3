@@ -11,6 +11,7 @@ FORMULAS TIENDA TERCERO.txt
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.github
 package-lock.json
 
 # testing

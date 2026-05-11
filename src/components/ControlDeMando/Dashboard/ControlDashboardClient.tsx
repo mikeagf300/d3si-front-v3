@@ -13,9 +13,10 @@ import DateRangeTabs from "./DateRangeTabs"
 import StatisticsGrid, { DashboardStat } from "./StatisticsGrid"
 import SalesEvolutionChart, { SalesEvolutionPoint } from "./SalesEvolutionChart"
 import WebRankingSection, { WebRankingItem } from "./WebRankingSection"
-import MayoristaSection, { MayoristaStoreItem } from "./MayoristaSection"
+import { StoreRankingCard, GoalProgressCard, MayoristaStoreItem } from "./MayoristaSection"
 import GaugeChartSection from "./GaugeChartSection"
 import ProductRanking from "./ProductRanking"
+import { MotionItem } from "@/components/Animations/motionItem"
 import { IResume } from "@/interfaces/sales/ISalesResume"
 import { ISaleResponse } from "@/interfaces/sales/ISale"
 import { IProduct } from "@/interfaces/products/IProduct"
@@ -285,44 +286,64 @@ export default function ControlDashboardClient() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-            <div className="flex-1 w-full flex flex-col">
-                <div className="lg:p-3 md:p-6">
-                    <DateRangeTabs
-                        dateRange={dateRange}
-                        setDateRange={setDateRange}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                    />
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="w-full px-3 md:px-6 py-4 space-y-5">
+                {/* ── Filtros de fecha ── */}
+                <DateRangeTabs
+                    dateRange={dateRange}
+                    setDateRange={setDateRange}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                />
 
-                    {loading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <p className="text-gray-500 dark:text-gray-400 animate-pulse">Cargando datos...</p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Grid principal */}
-                            <div className="flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-7 gap-4 md:gap-6">
+                {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <p className="text-gray-500 dark:text-gray-400 animate-pulse">Cargando datos...</p>
+                    </div>
+                ) : (
+                    <div className="space-y-5">
+                        {/* ── Fila 1: KPIs | Gauge | Ranking Categorías ── */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                            <MotionItem delay={1} className="lg:col-span-3">
                                 <StatisticsGrid stats={stats} />
-                                <GaugeChartSection resume={resume} />
-                                <ProductRanking initialProducts={products} categories={categories} />
-                                <SalesEvolutionChart
-                                    data={evolutionData}
-                                    mayoristaShare={mayoristaShare}
-                                    webShare={webShare}
-                                    webTotal={webTotal}
-                                    mayoristaTotal={mayoristaTotal}
-                                />
-                            </div>
+                            </MotionItem>
 
-                            {/* Segundo grid */}
-                            <div className="flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-5 gap-4 md:gap-8 mt-6">
+                            <MotionItem delay={2} className="lg:col-span-5">
+                                <GaugeChartSection resume={resume} />
+                            </MotionItem>
+
+                            <MotionItem delay={3} className="lg:col-span-4">
+                                <ProductRanking initialProducts={products} categories={categories} />
+                            </MotionItem>
+                        </div>
+
+                        {/* ── Fila 2: Evolución 12 meses (ancho completo) ── */}
+                        <MotionItem delay={4}>
+                            <SalesEvolutionChart
+                                data={evolutionData}
+                                mayoristaShare={mayoristaShare}
+                                webShare={webShare}
+                                webTotal={webTotal}
+                                mayoristaTotal={mayoristaTotal}
+                            />
+                        </MotionItem>
+
+                        {/* ── Fila 3: Ranking Web | Tiendas | Meta ── */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <MotionItem delay={5}>
                                 <WebRankingSection items={webItems} percentage={webPct} />
-                                <MayoristaSection topStores={topStores} salesTotal={salesTotal} goalTotal={goalTotal} />
-                            </div>
-                        </>
-                    )}
-                </div>
+                            </MotionItem>
+
+                            <MotionItem delay={6}>
+                                <StoreRankingCard topStores={topStores} />
+                            </MotionItem>
+
+                            <MotionItem delay={7}>
+                                <GoalProgressCard salesTotal={salesTotal} goalTotal={goalTotal} />
+                            </MotionItem>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
