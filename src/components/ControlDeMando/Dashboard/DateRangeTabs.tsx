@@ -26,11 +26,7 @@ function fromInputDate(yyyymmdd: string): string {
 }
 
 export default function DateRangeTabs({ dateRange, setDateRange, activeTab, setActiveTab }: DateRangeTabsProps) {
-    const tabs = [
-        { id: "detallado", label: "Ventas Detallado" },
-        { id: "comparadas", label: "Ventas Comparadas" },
-        { id: "markup", label: "Mark Up" },
-    ]
+    const tabs = [{ id: "detallado", label: "Ventas Detallado" }]
 
     return (
         <div className="mb-4 md:mb-6">

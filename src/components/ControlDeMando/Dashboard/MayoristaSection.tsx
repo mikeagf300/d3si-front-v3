@@ -24,7 +24,7 @@ export default function MayoristaSection({
 
     return (
         <>
-            {/* Header Canal Mayorista */}
+            {/* Header Canal Mayorista 
             <div className="lg:col-span-5 lg:col-start-5 lg:row-start-1 lg:row-span-1">
                 <Card className="dark:bg-gray-800 flex border-0 shadow-lg">
                     <CardTitle className="text-sm dark:text-white mx-4 mt-4 lg:mt-8">
@@ -38,9 +38,9 @@ export default function MayoristaSection({
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </div>*/}
 
-            {/* Botones Ranking y Ticket */}
+            {/* Botones Ranking y Ticket 
             <div className="lg:col-span-3 lg:col-start-10 lg:row-start-1 lg:row-span-1">
                 <Card className="dark:bg-gray-800 flex border-0 rounded-lg shadow-lg">
                     <CardContent className="flex gap-2 py-2 md:py-4 w-full">
@@ -52,7 +52,7 @@ export default function MayoristaSection({
                         </button>
                     </CardContent>
                 </Card>
-            </div>
+            </div>*/}
 
             {/* Ventas por Tienda */}
             <div className="lg:col-span-4 lg:col-start-5 lg:row-start-2 lg:row-span-4">

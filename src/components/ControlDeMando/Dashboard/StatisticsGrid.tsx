@@ -23,7 +23,7 @@ export interface DashboardStat {
 
 export default function StatisticsGrid({ stats }: { stats: DashboardStat[] }) {
     return (
-        <div className="lg:col-span-3 lg:row-span-7">
+        <div className="lg:col-span-3 lg:row-span-5">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-1 gap-2 lg:gap-2">
                 {stats.map((stat) => {
                     const Icon = iconMap[stat.icon as keyof typeof iconMap]
