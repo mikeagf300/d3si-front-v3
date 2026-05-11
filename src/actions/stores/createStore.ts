@@ -3,21 +3,13 @@ import { fetcher } from "@/lib/fetcher"
 import { IStore } from "@/interfaces/stores/IStore"
 
 /**
- * Obtiene todos los usuarios desde la API.
- * Realiza una petición GET a la ruta `/store` y devuelve los datos como un arreglo de productos.
+ * Crea una nueva tienda en el sistema.
  *
- * @returns {Promise<IStore[]>} - Promesa que resuelve con un array de objetos `IStore`.
- * 😊
- * @example
- * const store = await createStore();
+ * @param data - Los datos de la nueva tienda.
  */
-export async function createStore(name: string, userID: string, location: string, rut: string, phone: string, address: string,  city: string, isAdminStore: boolean) {
-    const store: IStore[] = await fetcher(`${API_URL}/store`,{
+export async function createStore(data: Partial<IStore>): Promise<IStore> {
+    return await fetcher<IStore>(`${API_URL}/stores`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, userID, location, rut, phone, address, city, isAdminStore }),
+        body: JSON.stringify(data),
     })
-    return store
 }

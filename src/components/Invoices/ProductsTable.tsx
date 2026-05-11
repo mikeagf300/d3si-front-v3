@@ -87,10 +87,6 @@ const ProductsTable: React.FC<Props> = ({ products }) => {
                                                 className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900"
                                                 onClick={() => {
                                                     if (item.variation.quantity >= item.variation.stockQuantity) {
-                                                        console.log(
-                                                            item.variation.quantity,
-                                                            item.variation.stockQuantity
-                                                        )
                                                         return toast.error("No se pueden agregar más, no hay más stock")
                                                     } else if (item.variation.stockQuantity === 0) {
                                                         removeProduct(item.variation.sku)

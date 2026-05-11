@@ -3,22 +3,38 @@ import { useSaleStore } from "@/stores/sale.store"
 import { IProduct } from "@/interfaces/products/IProduct"
 import { Input } from "@/components/ui/input"
 import { ChangeEvent, KeyboardEvent, useMemo, useState } from "react"
-import { IStoreProduct } from "@/interfaces/products/IProductVariation"
+import { IProductVariation, IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { IVariationWithQuantity } from "@/interfaces/orders/IOrder"
 import { useTienda } from "@/stores/tienda.store"
 import { toast } from "sonner"
+import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
+import { useSearchParams } from "next/navigation"
 
 interface Props {
     initialProducts: IProduct[]
 }
 
+const resolveStoreProductStoreId = (storeProduct: IStoreProduct) =>
+    storeProduct.storeID || storeProduct.Store?.storeID
+
+const findStoreProductForStore = (variation: IProductVariation, storeID: string) => {
+    if (!storeID) return undefined
+    return variation.StoreProducts?.find((storeProduct) => resolveStoreProductStoreId(storeProduct) === storeID)
+}
+
 export const ScanInput = ({ initialProducts }: Props) => {
-    const { addProduct, updateQuantity } = useSaleStore((state) => state.actions)
+    const { addProduct } = useSaleStore((state) => state.actions)
     const { storeSelected } = useTienda()
+    const searchParams = useSearchParams()
     const [productInput, setProductCode] = useState("")
+
+    // Use storeID directly — Zustand may not have the full store object
+    const effectiveStoreID = storeSelected?.storeID ?? searchParams.get("storeID") ?? ""
 
     const parentProductFinded = useMemo(() => {
         const inputTokens = productInput.toLowerCase().trim().split(/\s+/)
+
+        if (!Array.isArray(initialProducts)) return []
 
         return initialProducts.filter((p) => {
             const nameTokens = p.name.toLowerCase().split(/\s+/)
@@ -34,47 +50,44 @@ export const ScanInput = ({ initialProducts }: Props) => {
 
     const handleEnterPressed = async (e: KeyboardEvent<HTMLInputElement>) => {
         const isEnterPress = e.key === "Enter" || e.key === "NumpadEnter"
-        if (isEnterPress) {
-            e.preventDefault()
-            const productFinded = initialProducts.find((p) =>
-                p.ProductVariations.some((v) => v.sku === productInput.trim())
-            )
-            if (productFinded) {
-                const variationFinded = productFinded.ProductVariations.find((v) => v.sku === productInput.trim())
-                if (variationFinded) {
-                    const variationWithQuantity: IVariationWithQuantity = {
-                        ...variationFinded,
-                        quantity: 1,
-                    }
-                    const storeProduct = variationFinded.StoreProducts?.find(
-                        (p) => p.storeID === storeSelected?.storeID && p.variationID === variationFinded.variationID
-                    )
-                    if (storeProduct) {
-                        const storeQty: IVariationWithQuantity = {
-                            ...variationWithQuantity,
-                            stockQuantity: storeProduct.quantity,
-                        }
-                        addProduct(productFinded, storeQty, storeProduct)
-                        setProductCode("")
-                    } else {
-                        const storeProduct: IStoreProduct = {
-                            createdAt: variationFinded.createdAt,
-                            priceCostStore: variationFinded.priceCost.toString(),
-                            quantity: 0,
-                            Store: storeSelected!,
-                            storeID: storeSelected!.storeID,
-                            storeProductID: "",
-                            updatedAt: variationFinded.updatedAt,
-                            variationID: variationFinded.variationID,
-                        }
-                        addProduct(productFinded, { ...variationWithQuantity, quantity: 0 }, storeProduct)
-                        // updateQuantity(variationFinded.sku, 0)
-                    }
-                }
-            } else {
-                toast.error(`No se encontró sku: ${productInput}`)
-            }
+        if (!isEnterPress) return
+        e.preventDefault()
+        const productFinded = initialProducts.find((p) =>
+            p.ProductVariations.some((v) => v.sku === productInput.trim()),
+        )
+        if (!productFinded) {
+            toast.error(`No se encontró sku: ${productInput}`)
+            return
         }
+
+        const variationFinded = productFinded.ProductVariations.find((v) => v.sku === productInput.trim())
+        if (!variationFinded) return
+
+        if (!effectiveStoreID) {
+            toast.error("No hay tienda seleccionada")
+            return
+        }
+
+        const storeProduct = findStoreProductForStore(variationFinded, effectiveStoreID)
+        if (!storeProduct) {
+            toast.error("El producto no está asignado a la tienda seleccionada")
+            return
+        }
+
+        const variationWithQuantity: IVariationWithQuantity = {
+            ...variationFinded,
+            quantity: 1,
+            stockQuantity: storeProduct.quantity,
+        }
+
+        try {
+            const check = await getPriceCheck(storeProduct.storeProductID)
+            addProduct(productFinded, variationWithQuantity, storeProduct, check.finalPrice, check.activeOffer)
+        } catch (error) {
+            addProduct(productFinded, variationWithQuantity, storeProduct)
+        }
+
+        setProductCode("")
     }
     return (
         <>
@@ -100,44 +113,44 @@ export const ScanInput = ({ initialProducts }: Props) => {
                         productInput !== "" &&
                         parentProductFinded.map((product) =>
                             product.ProductVariations.map((variation) => {
-                                let storeProduct: IStoreProduct = {
-                                    createdAt: variation.createdAt,
-                                    priceCostStore: variation.priceCost.toString(),
-                                    quantity: 0,
-                                    Store: storeSelected!,
-                                    storeID: storeSelected!.storeID,
-                                    storeProductID: "",
-                                    updatedAt: variation.updatedAt,
-                                    variationID: variation.variationID,
-                                }
-                                const storeProductf = variation.StoreProducts?.find(
-                                    (p) =>
-                                        p.storeID === storeSelected!.storeID && p.variationID === variation.variationID
-                                )
-                                let variationWithQuantity: IVariationWithQuantity = { ...variation, quantity: 1 }
-                                if (storeProductf) {
-                                    variationWithQuantity = {
-                                        ...variationWithQuantity,
-                                        stockQuantity: storeProductf.quantity,
-                                    }
-                                    storeProduct = storeProductf
+                                const storeProductMatch = findStoreProductForStore(variation, effectiveStoreID)
+                                const variationWithQuantity: IVariationWithQuantity = {
+                                    ...variation,
+                                    quantity: 1,
+                                    stockQuantity: storeProductMatch?.quantity ?? 0,
                                 }
                                 return (
                                     <li
                                         key={variation.variationID}
-                                        onClick={() => {
-                                            addProduct(product, variationWithQuantity, storeProduct)
-                                            setProductCode("")
-                                            if (storeProduct.quantity === 0) {
-                                                updateQuantity(variation.sku, 0)
+                                        onClick={async () => {
+                                            if (!effectiveStoreID) {
+                                                toast.error("Selecciona una tienda primero")
+                                                return
                                             }
+                                            if (!storeProductMatch) {
+                                                toast.error("El producto no está asignado a la tienda seleccionada")
+                                                return
+                                            }
+                                            try {
+                                                const check = await getPriceCheck(storeProductMatch.storeProductID)
+                                                addProduct(
+                                                    product,
+                                                    variationWithQuantity,
+                                                    storeProductMatch,
+                                                    check.finalPrice,
+                                                    check.activeOffer,
+                                                )
+                                            } catch (error) {
+                                                addProduct(product, variationWithQuantity, storeProductMatch)
+                                            }
+                                            setProductCode("")
                                         }}
                                         className="p-2 hover:bg-blue-400 cursor-pointer transition"
                                     >
                                         {product.name} - {variation.sizeNumber}
                                     </li>
                                 )
-                            })
+                            }),
                         )}
                 </ul>
             </div>

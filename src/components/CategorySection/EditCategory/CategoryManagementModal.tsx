@@ -20,7 +20,7 @@ export function CategoryManagementModal({ isOpen, onClose }: CategoryManagementM
         if (isOpen) {
             fetchCategories()
         }
-    }, [isOpen])
+    }, [fetchCategories, isOpen])
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Administrar Categorías" maxWidth="max-w-4xl">

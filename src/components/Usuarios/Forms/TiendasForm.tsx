@@ -29,7 +29,7 @@ export default function TiendasForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        const gestor = users.find((u: IUser) => u.name === gestorTienda)
+        const gestor = users.find((u: IUser) => u.userID === gestorTienda)
 
         if (!gestor) {
             toast.error("Gestor no encontrado")
@@ -37,11 +37,19 @@ export default function TiendasForm() {
         }
 
         try {
-            let isAdmin = false
-            if (tipoTienda === Role.Admin) {
-                isAdmin = true
-            }
-            await createStore(nombre, gestor.userID, sucursal, rut, telefono, direccion, ciudad, isAdmin)
+            const isCentralStore = tipoTienda === Role.Admin
+
+            await createStore({
+                name: nombre,
+                location: sucursal,
+                rut: rut,
+                phone: telefono,
+                address: direccion,
+                city: ciudad,
+                email: email,
+                role: tipoTienda,
+                isAdminStore: isCentralStore,
+            })
 
             const allStores = await getAllStores()
             setStores(allStores)
@@ -259,7 +267,7 @@ export default function TiendasForm() {
                             </SelectTrigger>
                             <SelectContent>
                                 {users.map((u: IUser) => (
-                                    <SelectItem key={u.userID} value={u.name}>
+                                    <SelectItem key={u.userID} value={u.userID}>
                                         {u.name}
                                     </SelectItem>
                                 ))}

@@ -1,5 +1,14 @@
 import { IStore } from "../stores/IStore"
 import { IProduct } from "./IProduct"
+import { IOffer } from "../pricing/IPricing"
+
+export interface IStoreProductActiveOffer extends IOffer {
+    applied?: boolean
+    source?: string
+    previousPrice?: number
+    resultingPrice?: number
+    priority?: number
+}
 
 export interface IStoreProduct {
     storeProductID: string
@@ -7,6 +16,11 @@ export interface IStoreProduct {
     storeID: string
     quantity: number
     priceCostStore: string
+    priceListStore: string
+    finalPrice?: number
+    discountApplied?: boolean
+    activeOffer?: IStoreProductActiveOffer | null
+    specialOffers?: IOffer[]
     createdAt: string
     updatedAt: string
     Store: IStore

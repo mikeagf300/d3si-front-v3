@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import { ICategory } from "@/interfaces/categories/ICategory"
 import { updateCategory } from "@/actions/categories/updateCategory"
 import { deleteCategory } from "@/actions/categories/deleteCategory"
-import { createSubategory } from "@/actions/categories/createSubCategory"
+import { createCategory } from "@/actions/categories/createCategory"
 import { SubCategoryItem } from "./SubCategoryItem"
 
 interface CategoryItemProps {
@@ -33,7 +33,7 @@ export function CategoryItem({ category }: CategoryItemProps) {
 
         try {
             setLoading(true)
-            await updateCategory({ ...category, name: name.trim() })
+            await updateCategory(category.categoryID, { name: name.trim() })
             toast.success("Categoría actualizada con éxito")
             await fetchCategories()
             setIsEditing(false)
@@ -46,11 +46,24 @@ export function CategoryItem({ category }: CategoryItemProps) {
     }
 
     const handleDelete = async () => {
-        if (!confirm("¿Estás seguro de eliminar esta categoría y todas sus subcategorías?")) return
+        const hasChildren = (category.subcategories?.length ?? 0) > 0
+        const msg = hasChildren
+            ? `¿Estás seguro de eliminar "${category.name}" y sus ${category.subcategories!.length} subcategoría(s)?`
+            : `¿Estás seguro de eliminar la categoría "${category.name}"?`
+
+        if (!confirm(msg)) return
 
         try {
             setLoading(true)
+
+            // Primero eliminar cada subcategoría en orden
+            for (const sub of category.subcategories ?? []) {
+                await deleteCategory(sub.categoryID)
+            }
+
+            // Luego eliminar la categoría padre
             await deleteCategory(category.categoryID)
+
             toast.success("Categoría eliminada con éxito")
             await fetchCategories()
         } catch (error) {
@@ -66,7 +79,7 @@ export function CategoryItem({ category }: CategoryItemProps) {
 
         try {
             setLoading(true)
-            await createSubategory(category.categoryID, newSubName.trim())
+            await createCategory(newSubName.trim(), category.categoryID)
             toast.success("Subcategoría creada con éxito")
             setNewSubName("")
             setIsAddingSub(false)

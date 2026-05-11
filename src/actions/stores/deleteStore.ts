@@ -1,16 +1,13 @@
-
 import { fetcher } from "@/lib/fetcher"
 import { API_URL } from "@/lib/enviroments"
 
-type ErrorMessage = {
-    error: string
-}
-
-export async function deleteStore(storeID: string) {
-    return await fetcher<ErrorMessage>(`${API_URL}/store?storeID=${storeID}`, {
+/**
+ * Elimina una tienda por su ID.
+ *
+ * @param id - El ID de la tienda (storeID).
+ */
+export async function deleteStore(id: string): Promise<{ message: string }> {
+    return await fetcher<{ message: string }>(`${API_URL}/stores/${id}`, {
         method: "DELETE",
-        headers: {
-            "Content-Type": "application/json",
-        }
     })
 }

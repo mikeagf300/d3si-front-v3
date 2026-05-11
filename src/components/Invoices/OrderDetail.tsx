@@ -8,14 +8,14 @@ import OrderMainInfo from "./OrderMainInfo"
 import StoreInfo from "./StoreInfo"
 import ProductsTable from "./ProductsTable"
 import FinancialSummary from "./FinancialSummary"
-import { deleteOrder } from "@/actions/orders/deleteOrder"
 import { useAuth } from "@/stores/user.store"
 import { Role } from "@/lib/userRoles"
 import { useReactToPrint } from "react-to-print"
-import { ISingleOrderResponse } from "@/interfaces/orders/IOrder"
+import { IPurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 import { useEditOrderStore } from "@/stores/order.store"
 import { useRouter } from "next/navigation"
-import { updateOrder } from "@/actions/orders/updateOrder"
+import { updatePurchaseOrder } from "@/actions/purchase-orders/updatePurchaseOrder"
+import { updatePurchaseOrderStatus } from "@/actions/purchase-orders/updatePurchaseOrderStatus"
 import { Button } from "../ui/button"
 import { PrintOrderView } from "./PrintOrderView"
 import { useOrderInitialization } from "@/hooks/useOrderInitialization"
@@ -25,24 +25,9 @@ const MemoizedStoreInfo = React.memo(StoreInfo)
 const MemoizedProductsTable = React.memo(ProductsTable)
 
 interface Props {
-    order: ISingleOrderResponse
+    order: IPurchaseOrder
     allProducts: IProduct[]
 }
-
-export type typeField =
-    | "userID"
-    | "createdAt"
-    | "updatedAt"
-    | "storeID"
-    | "total"
-    | "status"
-    | "type"
-    | "discount"
-    | "dte"
-    | "startQuote"
-    | "endQuote"
-    | "expiration"
-    | "expirationPeriod"
 
 export default function OrderDetail({ order, allProducts }: Props) {
     const router = useRouter()
@@ -51,11 +36,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
     // Select specific state from store to minimize re-renders
     const discount = useEditOrderStore((s) => s.discount)
     const total = useEditOrderStore((s) => s.total)
-    const status = useEditOrderStore((s) => s.status)
     const newProducts = useEditOrderStore((s) => s.newProducts)
-
-    // Actions don't change, but good to be explicit/consistent
-    const clearCart = useEditOrderStore((s) => s.actions.clearCart)
 
     // Initialize store
     useOrderInitialization(order)
@@ -71,12 +52,14 @@ export default function OrderDetail({ order, allProducts }: Props) {
 
     // Transformar datos para PrintOrderView - memoized dependent on incoming order prop
     const printOrderData = useMemo(() => {
+        const orderItems = order.items || order.PurchaseOrderItems || []
         return {
             ...order,
-            ProductVariations: order.ProductVariations.map((v) => ({
-                ...v,
-                quantityOrdered: v.OrderProduct.quantityOrdered,
-                priceCost: v.OrderProduct.priceCost,
+            orderID: order.purchaseOrderID,
+            ProductVariations: orderItems.map((poi: any) => ({
+                ...poi.variation,
+                quantityOrdered: poi.quantity || poi.quantityRequested,
+                priceCost: poi.unitPrice,
             })),
         }
     }, [order])
@@ -105,46 +88,41 @@ export default function OrderDetail({ order, allProducts }: Props) {
             setLoading(true)
             // Access current state directly to avoid subscription in render cycle
             const currentState = useEditOrderStore.getState()
-            const { actions, newProducts, ...editedOrder } = currentState
 
-            const toNewProducts = newProducts.map((p) => p.variation).filter((v) => v.quantity > 0)
-            const newProductsClean = toNewProducts.map((p) => ({ ...p, priceCost: Math.round(p.priceCost) }))
-            const discountVal = Number(editedOrder.discount) || 0
-            const toUpdate = { ...editedOrder, discount: discountVal, newProducts: newProductsClean }
+            const payload = {
+                paymentStatus: currentState.status,
+                dueDate: currentState.expiration || order.dueDate,
+                dteNumber: currentState.dte || order.dteNumber || "",
+                discount: Number(currentState.discount) || 0,
+                isThirdParty: order.isThirdParty,
+                storeID: currentState.storeID || order.storeID || order.store?.storeID || order.Store?.storeID,
+                items: currentState.newProducts.map((item) => ({
+                    variationID: item.variation.variationID,
+                    quantity: item.variation.quantity,
+                    unitPrice: item.variation.priceCost,
+                })),
+            }
 
-            await updateOrder(toUpdate)
+            await updatePurchaseOrder(order.purchaseOrderID, payload)
+
+            // Si el estado ha cambiado respecto al original, llamar al endpoint de status
+            if (currentState.status !== (order.paymentStatus || order.status)) {
+                await updatePurchaseOrderStatus(order.purchaseOrderID, currentState.status as any)
+            }
+
             toast.success("Orden actualizada correctamente")
+            router.refresh()
         } catch (e) {
-            console.log(e)
             toast.error("Error al actualizar la orden")
         } finally {
             setLoading(false)
         }
-    }, [])
-
-    // Handler para eliminar la orden
-    const handleDelete = useCallback(async () => {
-        if (!order) return
-        if (confirm("¿Estás seguro de que quieres anular esta orden?")) {
-            try {
-                setLoading(true)
-                await deleteOrder(order.orderID)
-                router.push("/home/invoices")
-                toast.success("Orden anulada correctamente")
-                clearCart()
-            } catch (e) {
-                console.log(e)
-                toast.error("Error al anular la orden")
-            } finally {
-                setLoading(false)
-            }
-        }
-    }, [order, router, clearCart])
+    }, [order.purchaseOrderID, router])
 
     return (
         <div className="bg-white min-h-screen dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4">
             <div style={{ display: "none" }}>
-                <PrintOrderView ref={printRef} order={printOrderData} />
+                <PrintOrderView ref={printRef} order={printOrderData as any} />
             </div>
             <div className="max-w-5xl mx-auto print-container">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700 mb-6">
@@ -170,7 +148,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
                     </h1>
                 </div>
 
-                <MemoizedStoreInfo store={order.Store} />
+                <MemoizedStoreInfo store={order.store || order.Store} />
 
                 <div className="space-y-6 pt-6">
                     <OrderMainInfo cantidadTotalProductos={cantidadTotalProductos} fecha={fecha} />
@@ -184,7 +162,7 @@ export default function OrderDetail({ order, allProducts }: Props) {
                             <div className="flex gap-2">
                                 <button
                                     className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded shadow text-sm"
-                                    onClick={() => router.push(`/home/order/${order.orderID}/verify`)}
+                                    onClick={() => router.push(`/home/order/${order.purchaseOrderID}/verify`)}
                                 >
                                     Verificar Productos
                                 </button>
@@ -232,15 +210,6 @@ export default function OrderDetail({ order, allProducts }: Props) {
                                 {loading ? `Actualizando...` : `Actualizar Orden`}
                             </Button>
                         )}
-                        {/* {isAdmin && (
-                            <Button
-                                disabled={loading || status === "Pagado"}
-                                className=" bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded shadow"
-                                onClick={handleDelete}
-                            >
-                                Eliminar OC
-                            </Button>
-                        )} */}
                     </div>
                 </div>
             </div>

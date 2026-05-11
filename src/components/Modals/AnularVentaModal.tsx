@@ -21,8 +21,9 @@ import { useAuth } from "@/stores/user.store"
 import { toast } from "sonner"
 import { ISaleProduct, ISaleResponse } from "@/interfaces/sales/ISale"
 
-// Definir una interfaz para el producto con la cantidad a devolver
-interface SelectedProductReturn extends ISaleProduct {
+type SelectedProductReturn = {
+    key: string
+    product: ISaleProduct
     quantityToReturn: number
 }
 
@@ -50,6 +51,10 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
 
+    const hasOkFlag = (value: unknown): value is { ok: boolean } => {
+        return typeof value === "object" && value !== null && "ok" in value
+    }
+
     // Sincronizar el estado del formulario con los datos de la venta si ya tiene devoluciones
     useEffect(() => {
         if (isOpen) {
@@ -70,6 +75,23 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
         }
     }, [isOpen, sale])
 
+    const getSaleProductKey = (product: ISaleProduct, fallbackKey: string) => {
+        return product.saleProductID || product.variationID || fallbackKey
+    }
+
+    const getReturnedQtyForProduct = (product: ISaleProduct) => {
+        const saleProductID = product.saleProductID
+        const variationID = product.variationID
+
+        const match = sale.Return?.ProductAnulations?.find((a) => {
+            if (saleProductID && a.saleProductID) return a.saleProductID === saleProductID
+            if (variationID && a.variationID) return a.variationID === variationID
+            return false
+        })
+
+        return match?.returnedQuantity || 0
+    }
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target
         setFormState((prev) => ({ ...prev, [id]: value }))
@@ -85,16 +107,16 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
      * Si se deselecciona, se elimina del estado.
      */
     const handleToggleProduct = (product: ISaleProduct, availableQty: number) => {
-        const key = product.storeProductID // Usamos storeProductID como clave única
+        const key = getSaleProductKey(product, `${product.variation?.sku || "product"}`)
         setSelectedProducts((prev) => {
-            const isSelected = prev.some((p) => p.storeProductID === key)
+            const isSelected = prev.some((p) => p.key === key)
             if (isSelected) {
                 // Deseleccionar: eliminar el producto
-                return prev.filter((p) => p.storeProductID !== key)
+                return prev.filter((p) => p.key !== key)
             } else {
                 // Seleccionar: añadir con la cantidad disponible como valor inicial si es mayor a 0
                 const qty = Math.min(1, availableQty)
-                return [...prev, { ...product, quantityToReturn: qty }]
+                return [...prev, { key, product, quantityToReturn: qty }]
             }
         })
     }
@@ -108,10 +130,11 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
         availableQty: number,
     ) => {
         let finalQuantity: number
+        const key = getSaleProductKey(product, `${product.variation?.sku || "product"}`)
 
         // Validación y ajuste de la cantidad
         if (newQuantity === null || newQuantity === "" || Number(newQuantity) === 0) {
-            setSelectedProducts((prev) => prev.filter((p) => p.storeProductID !== product.storeProductID))
+            setSelectedProducts((prev) => prev.filter((p) => p.key !== key))
             return
         } else {
             // Aseguramos que la cantidad esté entre 0 y la cantidad disponible
@@ -120,8 +143,7 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
         }
 
         setSelectedProducts((prev) => {
-            const key = product.storeProductID
-            const existingProductIndex = prev.findIndex((p) => p.storeProductID === key)
+            const existingProductIndex = prev.findIndex((p) => p.key === key)
 
             if (existingProductIndex !== -1) {
                 // Si el producto ya estaba seleccionado, actualizamos la cantidad
@@ -133,7 +155,7 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
                 return updatedProducts
             } else if (finalQuantity > 0) {
                 // Si no estaba seleccionado lo añadimos
-                return [...prev, { ...product, quantityToReturn: finalQuantity }]
+                return [...prev, { key, product, quantityToReturn: finalQuantity }]
             }
             return prev
         })
@@ -141,10 +163,11 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
 
     // Función para manejar el valor del input, permitiendo valores intermedios (ej. un usuario escribiendo "2")
     const handleQuantityInput = (product: ISaleProduct, rawValue: string, availableQty: number) => {
+        const key = getSaleProductKey(product, `${product.variation?.sku || "product"}`)
         if (rawValue === "") {
             setSelectedProducts((prev) => {
                 const updated = [...prev]
-                const idx = updated.findIndex((p) => p.storeProductID === product.storeProductID)
+                const idx = updated.findIndex((p) => p.key === key)
                 if (idx !== -1) updated[idx].quantityToReturn = 0
                 return updated
             })
@@ -179,15 +202,14 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
         const nullNoteData = { ...formState }
 
         // Calculamos el total de productos devueltos sumando los ya existentes + los nuevos seleccionados
-        const returnedProducts = sale.SaleProducts.map((p) => {
-            const key = p.storeProductID
-            const alreadyReturned =
-                sale.Return?.ProductAnulations?.find((a) => a.storeProductID === key)?.returnedQuantity || 0
-
-            const newlySelected = selectedProducts.find((sp) => sp.storeProductID === key)?.quantityToReturn || 0
+        const returnedProducts = sale.SaleProducts.map((p, index) => {
+            const alreadyReturned = getReturnedQtyForProduct(p)
+            const key = getSaleProductKey(p, `idx_${index}`)
+            const newlySelected = selectedProducts.find((sp) => sp.key === key)?.quantityToReturn || 0
 
             return {
-                storeProductID: key,
+                saleProductID: p.saleProductID,
+                variationID: p.variationID,
                 quantity: alreadyReturned + newlySelected,
             }
         }).filter((p) => p.quantity > 0)
@@ -207,18 +229,18 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
             },
         }
 
-        console.log("AnularSale payload:", submissionData)
-
         startTransition(async () => {
             try {
-                const data = await anularSale(submissionData)
-                if (data.ok) {
-                    toast("Venta anulada correctamente")
-                    setIsOpen(false)
-                    router.push("/home")
-                } else {
+                const result = await anularSale(submissionData)
+                // Si el backend devuelve { ok: false } en 200, lo respetamos.
+                if (hasOkFlag(result) && result.ok === false) {
                     toast.error("No se pudo anular la venta")
+                    return
                 }
+
+                toast("Venta anulada correctamente")
+                setIsOpen(false)
+                router.push("/home")
             } catch (err: any) {
                 setError(err.message || "Ocurrió un error al anular la venta.")
             }
@@ -232,7 +254,8 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
                     <DialogHeader>
                         <DialogTitle>Anular Venta</DialogTitle>
                         <DialogDescription>
-                            Completa el formulario para procesar la anulación de la venta.
+                            Completa el formulario para registrar la anulación. El backend documentado solo confirma
+                            el cambio de estado de la venta por ahora.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-4 py-4">
@@ -263,20 +286,18 @@ export function AnularVentaModal({ isOpen, setIsOpen, sale }: AnularVentaModalPr
                         <div className="col-span-2 grid w-full gap-1.5">
                             <Label>Productos a anular</Label>
                             <div className="max-h-56 overflow-auto border rounded-md p-2">
-                                {sale.SaleProducts.map((p) => {
-                                    const key = p.storeProductID
+                                {sale.SaleProducts.map((p, index) => {
+                                    const key = getSaleProductKey(p, `idx_${index}`)
                                     const soldQty = p.quantitySold || 1
 
                                     // Cantidad ya anulada previamente
-                                    const returnedQty =
-                                        sale.Return?.ProductAnulations?.find((a) => a.storeProductID === key)
-                                            ?.returnedQuantity || 0
+                                    const returnedQty = getReturnedQtyForProduct(p)
 
                                     const availableQty = soldQty - returnedQty
                                     const name =
-                                        p.StoreProduct?.ProductVariation?.Product?.name || "Producto Desconocido"
+                                        p.variation?.sku || p.variationID || p.saleProductID || "Producto Desconocido"
 
-                                    const selectedProduct = selectedProducts.find((sp) => sp.storeProductID === key)
+                                    const selectedProduct = selectedProducts.find((sp) => sp.key === key)
                                     const selected = !!selectedProduct
 
                                     const quantityValue = selected

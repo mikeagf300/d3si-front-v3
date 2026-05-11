@@ -1,9 +1,9 @@
 "use client"
 import { updateMeta } from "@/actions/totals/updateMeta"
-import { formatDateToYYYYMMDD } from "@/utils/dateTransforms"
+import { getMetaMensual } from "@/actions/totals/getMetaMensual"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { use, useState } from "react"
+import { useEffect, useState } from "react"
 import { RadialBarChart, RadialBar, PolarAngleAxis } from "recharts"
 import { toPrice } from "@/utils/priceFormat"
 import { IResume } from "@/interfaces/sales/ISalesResume"
@@ -11,28 +11,67 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/stores/user.store"
 import { useTienda } from "@/stores/tienda.store"
 import { Role } from "@/lib/userRoles"
+import { toMonthlyPeriod } from "@/utils/monthPeriod"
 
-export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
+export default function TotalSalesResumeGraph({ resume, date }: { resume: IResume; date?: string }) {
     const [editingMeta, setEditingMeta] = useState(false)
     const [metaInput, setMetaInput] = useState("")
+    const [meta, setMeta] = useState(0)
+    const [loadingMeta, setLoadingMeta] = useState(true)
     const route = useRouter()
     const { user } = useAuth()
     const { storeSelected } = useTienda()
+    const period = toMonthlyPeriod(date)
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadMeta = async () => {
+            if (!storeSelected?.storeID) {
+                setMeta(0)
+                setLoadingMeta(false)
+                return
+            }
+
+            setLoadingMeta(true)
+            try {
+                const currentMeta = await getMetaMensual(storeSelected.storeID, period)
+                if (!cancelled) {
+                    setMeta(currentMeta)
+                }
+            } catch (error) {
+                console.error(error)
+                if (!cancelled) {
+                    setMeta(0)
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoadingMeta(false)
+                }
+            }
+        }
+
+        loadMeta()
+
+        return () => {
+            cancelled = true
+        }
+    }, [period, storeSelected?.storeID])
 
     const handleMetaSave = async () => {
         const metaNumber = Number(metaInput)
         if (!metaInput || isNaN(metaNumber) || metaNumber <= 0) {
-            toast.error("Ingresá una meta válida")
+            toast.error("Ingresa una meta válida")
             setEditingMeta(false)
             return
         }
 
         try {
-            const today = new Date()
-            const fecha = formatDateToYYYYMMDD(today)
-
-            const result = await updateMeta(fecha, metaNumber)
+            if (!storeSelected || !storeSelected.storeID) return toast.error("Falta seleccionar una tienda")
+            const result = await updateMeta(storeSelected!.storeID, metaNumber, period)
             if (result) {
+                setMeta(result)
+                setMetaInput(result.toString())
                 toast.success(`Meta actualizada a $${toPrice(metaNumber)}`)
                 route.refresh()
             } else {
@@ -46,16 +85,9 @@ export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
         }
     }
 
-    const getSalesAmount = (): number => {
-        const { orders, sales } = resume.totales
-        const totalSaleAndOrderMonth = orders.month.amount + sales.month.total.amount
-        return totalSaleAndOrderMonth
-    }
-
     // Calculate progress percentage
     const getProgressPercentage = () => {
-        const sales = getSalesAmount()
-        const meta = resume?.metaMensual?.meta ?? 0
+        const sales = resume?.periodSummary.month.total ?? 0
         if (meta === 0) return 0
         return Math.min((sales / meta) * 100)
     }
@@ -71,10 +103,10 @@ export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
                     percentage >= 100
                         ? "#10b981"
                         : percentage >= 75
-                        ? "#0ea5e9"
-                        : percentage >= 50
-                        ? "#f59e0b"
-                        : "#ef4444",
+                          ? "#0ea5e9"
+                          : percentage >= 50
+                            ? "#f59e0b"
+                            : "#ef4444",
             },
         ]
     }
@@ -98,7 +130,9 @@ export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
                 <RadialBar background dataKey="value" suppressHydrationWarning />
             </RadialBarChart>
 
-            <p className="text-xl -mt-6 dark:text-white font-bold">${toPrice(getSalesAmount())}</p>
+            <p className="text-xl -mt-6 dark:text-white font-bold">
+                ${toPrice(resume?.periodSummary.month.total ?? 0)}
+            </p>
             {editingMeta ? (
                 <Input
                     type="number"
@@ -117,14 +151,11 @@ export default function TotalSalesResumeGraph({ resume }: { resume: IResume }) {
                     className="w-32 mx-auto text-sm text-center"
                 />
             ) : (
-                <p
-                    className="text-sm text-gray-500 cursor-pointer hover:underline"
-                    onClick={() => {
-                        setMetaInput((resume?.metaMensual?.meta ?? 0).toString())
-                        setEditingMeta(true)
-                    }}
-                >
-                    Meta: ${toPrice(resume?.metaMensual?.meta ?? 0)}
+                <p className="text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => {
+                    setMetaInput(meta.toString())
+                    setEditingMeta(true)
+                }}>
+                    Meta: ${toPrice(loadingMeta ? 0 : meta)}
                 </p>
             )}
 

@@ -24,6 +24,7 @@ export default function useDarkMode() {
         if (isDarkMode === null) return // Esperando a que cargue el valor inicial
 
         document.documentElement.classList.toggle("dark", isDarkMode)
+        document.body?.classList.toggle("dark", isDarkMode)
         setServerCookie(isDarkMode)
     }, [isDarkMode])
 

@@ -1,30 +1,30 @@
-import { ISaleProduct, IsaleProductReturned, ISaleResponse } from "@/interfaces/sales/ISale"
+import { ISaleProduct, ISaleResponse } from "@/interfaces/sales/ISale"
 
 export const getAnulatedProducts = (sale: ISaleResponse): ISaleProduct[] => {
-    //    Usamos el storeProductID como clave.
-    const anulationMap = new Map<string, IsaleProductReturned>()
-    if (!sale.Return) return []
-    const { SaleProducts, Return } = sale
-    const { ProductAnulations } = Return
-    ProductAnulations.forEach((anul) => {
-        anulationMap.set(anul.storeProductID, anul)
+    const returnItems = sale.Return?.ProductAnulations ?? []
+    if (returnItems.length === 0) return []
+
+    const returnedQtyByKey = new Map<string, number>()
+
+    for (const anul of returnItems) {
+        const returnedQty = anul.returnedQuantity ?? 0
+        const keys = [anul.saleProductID, anul.variationID, anul.storeProductID].filter(
+            (key): key is string => Boolean(key),
+        )
+
+        for (const key of keys) {
+            returnedQtyByKey.set(key, (returnedQtyByKey.get(key) ?? 0) + returnedQty)
+        }
+    }
+
+    return sale.SaleProducts.flatMap((saleProduct) => {
+        const returnedQty =
+            returnedQtyByKey.get(saleProduct.saleProductID) ??
+            returnedQtyByKey.get(saleProduct.variationID) ??
+            0
+
+        if (returnedQty <= 0) return []
+
+        return [{ ...saleProduct, quantitySold: returnedQty }]
     })
-
-    const anulatedProducts: ISaleProduct[] = SaleProducts
-        // ➡️ Filtrar: Solo mantiene los productos que tienen un registro en el mapa de anulaciones.
-        .filter((saleP) => anulationMap.has(saleP.storeProductID))
-
-        // 🔄 Mapear: Transforma el objeto ISaleProduct.
-        .map((saleP) => {
-            const anulationData = anulationMap.get(saleP.storeProductID)! // Es seguro por el filtro
-
-            // Crear una copia del producto vendido.
-            const modifiedProduct: ISaleProduct = { ...saleP }
-
-            // Sobreescribir los datos importantes.
-            modifiedProduct.quantitySold = anulationData.returnedQuantity
-            return { ...modifiedProduct }
-        })
-
-    return anulatedProducts
 }

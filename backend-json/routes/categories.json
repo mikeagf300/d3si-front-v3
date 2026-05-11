@@ -1,0 +1,195 @@
+{
+    "/categories": {
+        "post": {
+            "description": "Crea una categoría de productos. Puede ser una categoría raíz o una subcategoría si se especifica parentID.",
+            "operationId": "CategoriesController_create",
+            "parameters": [],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "CreateCategoryDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201": {
+                    "description": "Categoría creada exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Category"
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Category"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Crear una nueva categoría",
+            "tags": ["Categorías"]
+        },
+        "get": {
+            "description": "Retorna solo las categorías principales (sin padre) con sus subcategorías anidadas en la propiedad children.",
+            "operationId": "CategoriesController_findAll",
+            "parameters": [],
+            "responses": {
+                "200": {
+                    "description": "Lista de categorías raíz con sus hijos.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Category"
+                                }
+                            }
+                        }
+                    }
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "Category"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener todas las categorías raíz",
+            "tags": ["Categorías"]
+        }
+    },
+    "/categories/{id}": {
+        "get": {
+            "description": "Retorna la información de una categoría específica incluyendo su padre y sus hijos.",
+            "operationId": "CategoriesController_findOne",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la categoría",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Categoría encontrada.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Category"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Categoría no encontrada."
+                },
+                "default": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            },
+            "summary": "Obtener una categoría por ID",
+            "tags": ["Categorías"]
+        },
+        "patch": {
+            "description": "Modifica el nombre o la categoría padre de una categoría existente.",
+            "operationId": "CategoriesController_update",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la categoría a actualizar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "UpdateCategoryDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Categoría actualizada exitosamente.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "Category"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Categoría no encontrada."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Actualizar una categoría",
+            "tags": ["Categorías"]
+        },
+        "delete": {
+            "description": "Elimina una categoría del sistema. Si tiene subcategorías, estas también serán eliminadas.",
+            "operationId": "CategoriesController_remove",
+            "parameters": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "in": "path",
+                    "description": "ID de la categoría a eliminar",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Categoría eliminada exitosamente."
+                },
+                "404": {
+                    "description": "Categoría no encontrada."
+                },
+                "default": {
+                    "description": ""
+                }
+            },
+            "summary": "Eliminar una categoría",
+            "tags": ["Categorías"]
+        }
+    }
+}

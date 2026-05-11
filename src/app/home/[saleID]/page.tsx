@@ -1,26 +1,48 @@
 import { getSingleSale } from "@/actions/sales/getSales"
 import AnularVentaControl from "@/components/Caja/AnularVentaControl"
 import PrintSaleButton from "@/components/Caja/PrintSaleButton"
+import SaleMainInfo from "@/components/Caja/SaleMainInfo"
 import SingleSaleTable from "@/components/Caja/SingleSaleTable"
+import FinancialSummary from "@/components/Invoices/FinancialSummary"
+import StoreInfo from "@/components/Invoices/StoreInfo"
 import { getAnulatedProducts } from "@/lib/getAnulatedProducts"
-import { toPrice } from "@/utils/priceFormat"
-import { MapPin, Phone, Receipt, ShoppingBag, Store } from "lucide-react"
+import { Receipt, ShoppingBag } from "lucide-react"
 import Link from "next/link"
 
 interface PropsSale {
     params: Promise<{
         saleID: string
     }>
+    searchParams?: Promise<{ storeID?: string | string[] }>
 }
-export default async function SingleSalePage({ params }: PropsSale) {
+export default async function SingleSalePage({ params, searchParams }: PropsSale) {
     const { saleID } = await params
-    const sale = await getSingleSale(saleID)
-    const products = sale.SaleProducts
-    if (!sale || !products) return null
+    const resolvedSearchParams = await searchParams
+    const storeIDParam = resolvedSearchParams?.storeID
+    const storeID = Array.isArray(storeIDParam) ? storeIDParam[0] : storeIDParam
+
+    const sale = await getSingleSale(saleID, storeID)
+    const products = sale?.SaleProducts ?? []
+    if (!sale) return null
 
     const nulledProducts = getAnulatedProducts(sale)
-    const total = products.reduce((acc, act) => acc + act.quantitySold * act.unitPrice, 0)
+    const total = products.reduce((acc, act) => acc + act.quantitySold * Number(act.unitPrice), 0)
     const totalNulled = nulledProducts.reduce((acc, act) => acc + act.quantitySold * Number(act.unitPrice), 0)
+
+    const cantidadTotalProductos = products.reduce((acc, act) => act.quantitySold + acc, 0)
+    const fecha = new Date(sale.createdAt).toLocaleDateString("es-MX", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "America/Santiago",
+    })
+
+    const storeForInfo = {
+        ...sale.Store,
+        address: `${sale.Store.location ?? ""} ${sale.Store.address ?? ""}`.trim() || sale.Store.address,
+    }
+
+    const neto = (total - totalNulled) / 1.19
 
     return (
         <div className="bg-white min-h-screen dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4">
@@ -47,87 +69,14 @@ export default async function SingleSalePage({ params }: PropsSale) {
                     </h1>
                 </div>
                 <div className="space-y-6 pt-6">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
-                            <Store className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                            Información de la Tienda
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                                    <Store className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Nombre</p>
-                                    <p className="font-medium">{sale.Store.name || "N/A"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                                    <MapPin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Dirección</p>
-                                    <p className="font-medium">
-                                        {sale.Store.location + " " + sale.Store.address || "N/A"}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                                    <Phone className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Teléfono</p>
-                                    <p className="font-medium">{sale.Store.phone || "N/A"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                                    <span className="w-4 h-4 text-orange-600 dark:text-orange-400 font-bold">@</span>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
-                                    <p className="font-medium">{sale.Store.email || "N/A"}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Número de productos solicitados */}
-                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    N° Productos solicitados
-                                </span>
-                            </div>
-                            <p className="text-lg font-semibold">
-                                {products.reduce((acc, act) => act.quantitySold + acc, 0)}
-                            </p>
-                        </div>
-                        {/* Fecha de emisión */}
-                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Fecha de emisión
-                                </span>
-                            </div>
-                            <p className="text-lg font-semibold">
-                                {new Date(sale.createdAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}{" "}
-                                |{" "}
-                                {new Date(sale.createdAt).toLocaleTimeString("es-CL", { timeZone: "America/Santiago" })}
-                            </p>
-                        </div>
-                        {/* Vencimiento del Pago */}
-                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Tipo de Pago:
-                                </span>
-                            </div>
-                            <p className="text-lg font-semibold">{sale.paymentType}</p>
-                        </div>
-                    </div>
+                    <StoreInfo store={storeForInfo} />
+                    <SaleMainInfo
+                        cantidadTotalProductos={cantidadTotalProductos}
+                        fecha={fecha}
+                        paymentType={sale.paymentType}
+                        status={sale.status}
+                        total={total - totalNulled}
+                    />
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -139,7 +88,7 @@ export default async function SingleSalePage({ params }: PropsSale) {
                             <SingleSaleTable products={products} />
                         </div>
                     </div>
-                    {nulledProducts.length && (
+                    {nulledProducts.length > 0 && (
                         <div className="bg-red-50 dark:bg-red-950 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -179,28 +128,7 @@ export default async function SingleSalePage({ params }: PropsSale) {
                             </div>
                         </div>
                     )}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="text-center">
-                                <p className="text-sm text-blue-600 dark:text-blue-300 mb-1">Neto</p>
-                                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                                    {toPrice((total - totalNulled) / 1.19)}
-                                </p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-sm text-blue-600 dark:text-blue-300 mb-1">IVA (19%)</p>
-                                <p className="text-lg font-semibold text-blue-800 dark:text-blue-200">
-                                    {toPrice((total - totalNulled) * 0.19)}
-                                </p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-sm text-blue-600 dark:text-blue-300 mb-1">Total</p>
-                                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                                    {toPrice(total - totalNulled)}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <FinancialSummary total={neto} discount={0} />
                     <div className="flex flex-col md:flex-row gap-3 justify-end mt-6">
                         <PrintSaleButton sale={sale} />
                         <AnularVentaControl sale={sale} />

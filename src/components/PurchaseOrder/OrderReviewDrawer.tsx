@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { toPrice } from "@/utils/priceFormat"
 import { useMemo, useState } from "react"
 import { ScrollArea } from "../ui/scroll-area"
-import { createOrder } from "@/actions/orders/purchaseOrder"
+import { createPurchaseOrder } from "@/actions/purchase-orders/createPurchaseOrder"
 import { useAuth } from "@/stores/user.store"
 import { useTienda } from "@/stores/tienda.store"
 import { toast } from "sonner"
@@ -28,6 +28,7 @@ import { Input } from "../ui/input"
 import { usePedidoOC } from "@/stores/pedidoOC"
 import { Role } from "@/lib/userRoles"
 import { useTerceroProducts } from "@/stores/terceroCost.store"
+import { ICreatePurchaseOrder } from "@/interfaces/orders/IPurchaseOrder"
 
 export function OrderReviewDrawer() {
     const [isLoading, setLoading] = useState(false)
@@ -62,28 +63,32 @@ export function OrderReviewDrawer() {
     const submitOC = async () => {
         try {
             setLoading(true)
-            const newProductsTercero = pedidoConPrecioCalculado.map((item) => ({
-                ...item.variation,
-                priceCost: item.priceCostTer,
-            }))
 
-            await createOrder({
-                storeID: storeSelected?.storeID || "",
-                userID: user?.userID || "",
-                newProducts: newProductsTercero,
+            if (!storeSelected) {
+                toast.error("Debes elegir una tienda")
+                return
+            }
+
+            const payload: ICreatePurchaseOrder = {
+                storeID: storeSelected.storeID,
+                items: pedidoConPrecioCalculado.map((item) => ({
+                    variationID: item.variation.variationID,
+                    quantity: item.variation.quantity,
+                    unitPrice: item.priceCostTer,
+                })),
+                isThirdParty: storeSelected.role !== Role.Admin,
+                dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // Default 30 days
+                dteNumber: "", // To be filled optionally
                 discount: 0,
-                dte: "",
-                startQuote: null,
-                endQuote: null,
-                expiration: null,
-                expirationPeriod: "MENSUAL",
-                status: "Pendiente",
-                type: "OCD",
-            })
+            }
+
+            await createPurchaseOrder(payload)
             clearPedido()
             toast.success("Orden creada con éxito")
-            if (router.push) router.push("/home/invoices")
-        } catch {
+            router.refresh()
+            router.push("/home/invoices")
+        } catch (error) {
+            console.error("Error al crear la orden:", error)
             toast.error("Error al crear la orden")
         } finally {
             setLoading(false)

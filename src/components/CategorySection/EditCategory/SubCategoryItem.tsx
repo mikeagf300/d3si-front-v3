@@ -7,7 +7,7 @@ import { Tag, Edit2, Trash2, Check, X, LoaderCircle } from "lucide-react"
 import { useCategories } from "@/stores/categories.store"
 import { toast } from "sonner"
 import { ICategory } from "@/interfaces/categories/ICategory"
-import { updateSubCategory } from "@/actions/categories/updateSubCategory"
+import { updateCategory } from "@/actions/categories/updateCategory"
 import { deleteCategory } from "@/actions/categories/deleteCategory"
 
 interface SubCategoryItemProps {
@@ -28,7 +28,7 @@ export function SubCategoryItem({ subcategory }: SubCategoryItemProps) {
 
         try {
             setLoading(true)
-            await updateSubCategory(name.trim(), subcategory.categoryID, subcategory.parentID)
+            await updateCategory(subcategory.categoryID, { name: name.trim() })
             toast.success("Subcategoría actualizada con éxito")
             await fetchCategories()
             setIsEditing(false)

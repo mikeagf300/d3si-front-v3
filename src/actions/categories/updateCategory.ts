@@ -3,29 +3,16 @@ import { API_URL } from "@/lib/enviroments"
 import { ICategory } from "@/interfaces/categories/ICategory"
 
 /**
- * Actualiza un IUser en la base de datos mediante una petición HTTP PUT.
- * Utiliza la función `fetcher` para manejar la solicitud.
+ * Actualiza una categoría por su ID.
+ * PATCH /categories/:id
  *
- * Debe incluir el `productID` que será usado para identificar el recurso en la URL.
- *
- * @returns {Promise<void>} - No devuelve nada si la operación es exitosa.
- *
- * @throws {Error} - En caso de error, se muestra un mensaje en la consola.
- *
- * @example
- * await updateSubCategoria = {
-    name: string,
-    categoriaID: string
-}
+ * @param {string} id - ID de la categoría a actualizar.
+ * @param {object} data - Datos a actualizar (name y/o parentID).
+ * @returns {Promise<ICategory>} - Promesa que resuelve con la categoría actualizada.
  */
-
-export async function updateCategory(category: ICategory) {
-    const store = await fetcher(`${API_URL}/categories/${category.categoryID}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: category.name }),
+export async function updateCategory(id: string, data: { name?: string; parentID?: string }): Promise<ICategory> {
+    return await fetcher<ICategory>(`${API_URL}/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
     })
-    return store
 }

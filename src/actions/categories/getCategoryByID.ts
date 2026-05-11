@@ -3,13 +3,12 @@ import { API_URL } from "@/lib/enviroments"
 import { ICategory } from "@/interfaces/categories/ICategory"
 
 /**
- * Obtiene todos los categories asociados a una tienda específica desde la base de datos.
- * Realiza una petición GET a la API usando el ID de la tienda como query parameter.
+ * Obtiene una categoría por su ID.
+ * GET /categories/:id
  *
- * @param {string} id - ID de la tienda (`ID`) para filtrar los categories.
+ * @param {string} id - ID de la categoría.
+ * @returns {Promise<ICategory>} - Promesa que resuelve con la categoría encontrada.
  */
-
-export const getCategoryByID = async (id: string): Promise<ICategory[]> => {
-    const Category: ICategory[] = await fetcher(`${API_URL}/categories/${id}`)
-    return Category
+export const getCategoryByID = async (id: string): Promise<ICategory> => {
+    return await fetcher<ICategory>(`${API_URL}/categories/${id}`)
 }

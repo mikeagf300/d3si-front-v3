@@ -1,6 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
+import { API_URL } from "@/lib/enviroments"
+import { fetcher } from "@/lib/fetcher"
 
 interface FinancialData {
     periodo: string
@@ -13,28 +16,34 @@ interface FinancialData {
     impuestos: number
 }
 
-const mockData: FinancialData = {
-    periodo: "Enero - Marzo 2025",
-    ventas: 600000,
-    costoVentas: 360000,
-    gastosVenta: 90000,
-    gastosAdministracion: 0,
-    gastosFinancieros: 0,
-    otrosIngresos: 50000,
-    impuestos: 0,
-}
-
 export default function ResultsPanel() {
-    const {
-        periodo,
-        ventas,
-        costoVentas,
-        gastosVenta,
-        gastosAdministracion,
-        gastosFinancieros,
-        otrosIngresos,
-        impuestos,
-    } = mockData
+    const [data, setData] = useState<FinancialData | null>(null)
+
+    useEffect(() => {
+        let mounted = true
+        const fetchData = async () => {
+            try {
+                const res = await fetcher<FinancialData>(`${API_URL}/home?date=&storeID=`)
+                if (mounted) setData(res)
+            } catch (err) {
+                console.warn("ResultsPanel: error fetching financial data", err)
+                if (mounted) setData(null)
+            }
+        }
+        fetchData()
+        return () => {
+            mounted = false
+        }
+    }, [])
+
+    const periodo = data?.periodo || "-"
+    const ventas = data?.ventas || 0
+    const costoVentas = data?.costoVentas || 0
+    const gastosVenta = data?.gastosVenta || 0
+    const gastosAdministracion = data?.gastosAdministracion || 0
+    const gastosFinancieros = data?.gastosFinancieros || 0
+    const otrosIngresos = data?.otrosIngresos || 0
+    const impuestos = data?.impuestos || 0
 
     const utilidadBruta = ventas - costoVentas
     const totalGastosOperacion = gastosVenta + gastosAdministracion + gastosFinancieros

@@ -1,8 +1,20 @@
 import Navbar from "@/components/Navbar/Navbar"
 import Sidebar from "@/components/Sidebar/Sidebar"
+import { AUTH_COOKIE_NAME } from "@/lib/auth-session"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
-export default function HomeLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = "force-dynamic"
+
+export default async function HomeLayout({ children }: { children: React.ReactNode }) {
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get(AUTH_COOKIE_NAME)?.value
+
+    if (!authToken) {
+        redirect("/login")
+    }
+
     return (
         <div className="flex h-screen dark:bg-gray-900 bg-gray-100">
             <Suspense fallback={"...cargando"}>

@@ -8,9 +8,15 @@ import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { es } from "react-day-picker/locale"
+import { IStore } from "@/interfaces/stores/IStore"
 
-const FilterControls = () => {
-    const { stores } = useTienda()
+interface FilterControlsProps {
+    stores?: IStore[]
+}
+
+const FilterControls = ({ stores: storesProp }: FilterControlsProps) => {
+    const { stores: storesFromZustand } = useTienda()
+    const stores = storesProp ?? storesFromZustand
 
     const path = usePathname()
     const params = useSearchParams()

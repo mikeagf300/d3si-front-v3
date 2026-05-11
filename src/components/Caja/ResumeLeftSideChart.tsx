@@ -6,11 +6,13 @@ import { useAuth } from "@/stores/user.store"
 import { useTienda } from "@/stores/tienda.store"
 import { Role } from "@/lib/userRoles"
 
-export default function ResumeLeftSideChart({ resume }: { resume: IResume }) {
-    const { orders, sales } = resume.totales
+interface ResumeLeftProps {
+    saleResume: IResume
+}
+
+export default function ResumeLeftSideChart({ saleResume }: ResumeLeftProps) {
     const { user } = useAuth()
     const { storeSelected } = useTienda()
-
     if (user?.role !== Role.Admin && storeSelected?.role !== Role.Admin) return null
     return (
         <div className="flex flex-col gap-9">
@@ -20,7 +22,7 @@ export default function ResumeLeftSideChart({ resume }: { resume: IResume }) {
                 </div>
                 <div>
                     <p className="text-sm text-gray-500">Boletas Emitidas</p>
-                    <p className={`text-xl dark:text-white font-bold`}>{sales.month.total.count}</p>
+                    <p className={`text-xl dark:text-white font-bold`}>{saleResume.periodSummary.month.count}</p>
                 </div>
             </div>
             <div className="flex dark:bg-gray-800 bg-white shadow rounded p-4 items-center">
@@ -29,7 +31,7 @@ export default function ResumeLeftSideChart({ resume }: { resume: IResume }) {
                 </div>
                 <div>
                     <p className="text-sm text-gray-500">Facturas Emitidas</p>
-                    <p className={`text-xl dark:text-white font-bold`}>{orders.month.count}</p>
+                    <p className={`text-xl dark:text-white font-bold`}>{0}</p>
                 </div>
             </div>
             <div className="flex dark:bg-gray-800 bg-white shadow rounded p-4 items-center">
@@ -38,7 +40,7 @@ export default function ResumeLeftSideChart({ resume }: { resume: IResume }) {
                 </div>
                 <div>
                     <p className="text-sm text-gray-500">Facturación mensual</p>
-                    <p className={`text-xl dark:text-white font-bold`}>${toPrice(orders.month.amount)}</p>
+                    <p className={`text-xl dark:text-white font-bold`}>${toPrice(0)}</p>
                 </div>
             </div>
         </div>

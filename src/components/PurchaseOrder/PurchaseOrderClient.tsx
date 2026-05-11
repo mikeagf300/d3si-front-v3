@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import type { IProduct } from "@/interfaces/products/IProduct"
 import type { IStore } from "@/interfaces/stores/IStore"
 import { Input } from "@/components/ui/input"
@@ -52,18 +52,22 @@ export default function PurchaseOrderClient({
     const { setRawProducts } = inventoryStore()
     const { addOrUpdatePedido, pedido } = usePedidoOC()
 
+    // Refs para capturar valores iniciales sin causar loops en useEffect
+    const initialProductsRef = useRef(initialProducts)
+    const initialStoresRef = useRef(initialStores)
+
     // 1. Filtrar productos por tienda seleccionada
     const filteredByStore = useMemo(() => {
         if (user?.role === "admin" && !storeSelected?.storeID) return filteredAndSortedProducts
         if (user?.role === "store_manager" && storeSelected?.storeID) {
             return filteredAndSortedProducts.filter((product) =>
-                product.ProductVariations.some((variation) =>
-                    variation?.StoreProducts?.some((storeProduct) => storeProduct.storeID === storeSelected.storeID)
-                )
+                (product.ProductVariations || []).some((variation) =>
+                    variation?.StoreProducts?.some((storeProduct) => storeProduct.storeID === storeSelected.storeID),
+                ),
             )
         }
         return filteredAndSortedProducts
-    }, [filteredAndSortedProducts, storeSelected?.storeID, user?.role, storeSelected?.storeID])
+    }, [filteredAndSortedProducts, storeSelected?.storeID, user?.role])
 
     // 2. Filtrar productos por búsqueda
     const searchedProducts = useMemo(() => {
@@ -72,7 +76,7 @@ export default function PurchaseOrderClient({
         return filteredByStore.filter(
             (product) =>
                 product.name.toLowerCase().includes(lower) ||
-                product.ProductVariations.some((v) => v.sku?.toLowerCase().includes(lower))
+                (product.ProductVariations || []).some((v) => v.sku?.toLowerCase().includes(lower)),
         )
     }, [search, filteredByStore])
 
@@ -84,18 +88,14 @@ export default function PurchaseOrderClient({
 
         // se ordena aquí por ahora.
         const productsToPaginate = [...searchedProducts].sort((a, b) => {
-            const totalA = a.ProductVariations.reduce((sum, v) => {
-                return sum + v.stockQuantity
-            }, 0)
-            const totalB = b.ProductVariations.reduce((sum, v) => {
-                return sum + v.stockQuantity
-            }, 0)
+            const totalA = (a.ProductVariations || []).reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0)
+            const totalB = (b.ProductVariations || []).reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0)
             return totalB - totalA
         })
 
         for (const product of productsToPaginate) {
             // Ordenar las variaciones por talla (no por stock como estaba antes)
-            const sortedVariations: IVariationWithQuantity[] = [...product.ProductVariations]
+            const sortedVariations: IVariationWithQuantity[] = [...(product.ProductVariations || [])]
                 .sort((a, b) => a.sizeNumber.localeCompare(b.sizeNumber))
                 .map((v) => ({ quantity: 0, ...v }))
 
@@ -161,7 +161,7 @@ export default function PurchaseOrderClient({
             // Buscar el producto en la lista inicial para asegurar que lo encontramos
             let found = false
             for (const product of initialProducts) {
-                for (const variation of product.ProductVariations) {
+                for (const variation of product.ProductVariations || []) {
                     if (variation.sku === sku) {
                         const findQuantity =
                             pedido.find((p) => p.variation.variationID === variation.variationID)?.variation.quantity ||
@@ -215,14 +215,17 @@ export default function PurchaseOrderClient({
     }, [search, selectedFilter, sortDirection, selectedGenre, isTercero, orderByMarkup])
 
     useEffect(() => {
-        setRawProducts(initialProducts)
+        setRawProducts(initialProductsRef.current)
         setSelectedFilter("genre")
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
         return () => {
-            setStoreSelected(initialStores[0])
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            setStoreSelected(initialStoresRef.current[0])
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return (
@@ -254,7 +257,7 @@ export default function PurchaseOrderClient({
                                                 setStoreSelected(findedStore)
                                             }}
                                         >
-                                            <SelectTrigger className="w-[300px] h-11 border-2">
+                                            <SelectTrigger className="w-75 h-11 border-2">
                                                 <SelectValue placeholder="Seleccionar tienda" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -267,7 +270,7 @@ export default function PurchaseOrderClient({
                                         </Select>
                                     ) : (
                                         <Select value={storeSelected?.storeID || ""} disabled>
-                                            <SelectTrigger className="w-[300px] h-11 border-2">
+                                            <SelectTrigger className="w-75 h-11 border-2">
                                                 <SelectValue placeholder="Seleccionar tienda" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -402,7 +405,7 @@ export default function PurchaseOrderClient({
                 )}
             </main>
             <MotionItem>
-                <div className="fixed left-0 right-0 bottom-0 z-50 dark:bg-slate-900 bg-slate-200 shadow-[4px_-4px_8px_rgba(0,0,0,0.1)] dark:shadow-slate-950 shadow-slate-400 border-t px-8 py-1 transition-all duration-300 w-full lg:ml-[260px] lg:w-[calc(100%-250px)]">
+                <div className="fixed left-0 right-0 bottom-0 z-50 dark:bg-slate-900 bg-slate-200 shadow-[4px_-4px_8px_rgba(0,0,0,0.1)] dark:shadow-slate-950 shadow-slate-400 border-t px-8 py-1 transition-all duration-300 w-full lg:ml-65 lg:w-[calc(100%-250px)]">
                     <PurchaseOrderSummary />
                 </div>
             </MotionItem>

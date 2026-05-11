@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Scan, CheckCircle2, AlertTriangle, XCircle, RefreshCcw, Search, FilterX } from "lucide-react"
 import { OrderEditItem, useEditOrderStore } from "@/stores/order.store"
 import { IProduct } from "@/interfaces/products/IProduct"
-import { updateOrder } from "@/actions/orders/updateOrder"
+import { verifyPurchaseOrder } from "@/actions/purchase-orders/verifyPurchaseOrder"
 import { toast } from "sonner"
+import { IPurchaseOrderItemReceived } from "@/interfaces/orders/IPurchaseOrder"
 
 type ItemStatus = "complete" | "missing" | "extra" | "unexpected"
 
@@ -195,7 +196,7 @@ export default function ProductVerification({ orderId, originalProducts, allProd
             { value: "unexpected" as const, label: "No esperados", count: stats.statusByItems.unexpected },
             { value: "complete" as const, label: "Completos", count: stats.statusByItems.complete },
         ],
-        [extendedList.length, stats.statusByItems]
+        [extendedList.length, stats.statusByItems],
     )
 
     const inventorySkuSet = useMemo(() => {
@@ -273,7 +274,7 @@ export default function ProductVerification({ orderId, originalProducts, allProd
                     toast.error(
                         `Los siguientes SKUs no se encontraron en el inventario: ${notFound.slice(0, 5).join(", ")}${
                             notFound.length > 5 ? "..." : ""
-                        }`
+                        }`,
                     )
                 }
             }
@@ -286,44 +287,45 @@ export default function ProductVerification({ orderId, originalProducts, allProd
     const applyAndUpdateOrder = async () => {
         try {
             setUpdating(true)
-            // 1) Aplicar al store: actualizar cantidades para SKUs de la orden
+
+            const itemsToVerify: IPurchaseOrderItemReceived[] = []
+
+            // 1) Procesar productos esperados y recolectar para verificación
             originalProducts.forEach((item) => {
                 const scanned = scannedProducts.get(item.variation.sku) || 0
-                const newQty = scanned
-                storeActions.updateQuantity(item.variation.sku, newQty)
+                itemsToVerify.push({
+                    variationID: item.variation.variationID,
+                    quantityReceived: scanned,
+                    unitPrice: Number(item.variation.priceCost) || 0,
+                })
             })
 
-            // 1b) Agregar a la orden los SKUs escaneados que no estaban, si existen en inventario
+            // 1b) Agregar a la verificación los SKUs escaneados que no estaban en la orden original
             scannedProducts.forEach((quantity, sku) => {
                 if (!expectedProducts.has(sku)) {
                     for (const product of allProducts) {
                         const variation = product.ProductVariations.find((v) => v.sku === sku)
                         if (variation) {
-                            storeActions.addProduct(product, { ...variation, quantity })
+                            itemsToVerify.push({
+                                variationID: variation.variationID,
+                                quantityReceived: quantity,
+                                unitPrice: Number(variation.priceCost) || 0,
+                            })
                             break
                         }
                     }
                 }
             })
 
-            // 2) Tomar el estado actualizado y enviar al backend
-            const { newProducts, actions: _unusedActions, discount, ...rest } = useEditOrderStore.getState()
-            const toNewProducts = newProducts
-                .map((p) => p.variation)
-                .filter((v) => v.quantity > 0)
-                .map((variation) => ({
-                    ...variation,
-                    priceCost: Math.round(Number(variation.priceCost) || 0),
-                }))
+            // 2) Enviar al backend usando la nueva acción de verificación
+            await verifyPurchaseOrder(orderId, itemsToVerify)
 
-            const sanitizedDiscount = typeof discount === "number" ? discount : Number(discount) || 0
-
-            await updateOrder({ ...rest, discount: sanitizedDiscount, newProducts: toNewProducts })
-            toast.success("Orden actualizada con los productos verificados")
+            toast.success("Orden verificada exitosamente")
+            router.refresh()
             router.push(`/home/order/${orderId}`)
         } catch (e) {
             console.error(e)
-            toast.error("No se pudo actualizar la orden")
+            toast.error("No se pudo verificar la orden")
         } finally {
             setUpdating(false)
         }

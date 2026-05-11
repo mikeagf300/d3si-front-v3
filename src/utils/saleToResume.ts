@@ -1,32 +1,9 @@
 import { ISaleResponse } from "@/interfaces/sales/ISale"
-import { ISalesResume, ITotals } from "@/interfaces/sales/ISalesResume"
+import { ISalesResume } from "@/interfaces/sales/ISalesResume"
 import { getAnulatedProducts } from "@/lib/getAnulatedProducts"
-
-const CHILE_TZ = "America/Santiago"
-const chileDateFormatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: CHILE_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-})
+import { getChileDateMeta } from "@/utils/chile-date"
 
 const DAY_MS = 24 * 60 * 60 * 1000
-
-const getChileDateMeta = (date: Date) => {
-    const parts = chileDateFormatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
-        if (part.type === "year" || part.type === "month" || part.type === "day") acc[part.type] = part.value
-        return acc
-    }, {})
-    const year = Number(parts.year)
-    const month = Number(parts.month) - 1
-    const day = Number(parts.day)
-    return {
-        year,
-        month,
-        day,
-        dayNumber: Date.UTC(year, month, day),
-    }
-}
 
 export const salesToResume = (sales: ISaleResponse[], ref: Date): ISalesResume => {
     const resume: ISalesResume = {
@@ -57,10 +34,10 @@ export const salesToResume = (sales: ISaleResponse[], ref: Date): ISalesResume =
     const last7StartDayNumber = refMeta.dayNumber - 6 * DAY_MS
 
     for (const sale of sales) {
-        if (sale.status !== "Pagado" && sale.status !== "Anulado") continue
+        if (sale.status === "Pagado") continue
 
         const nulledProducts = getAnulatedProducts(sale)
-        const totalNulledAmount = nulledProducts.reduce((acc, p) => acc + p.quantitySold * p.unitPrice, 0)
+        const totalNulledAmount = nulledProducts.reduce((acc, p) => acc + p.quantitySold * Number(p.unitPrice), 0)
         const amount = sale.total - totalNulledAmount
 
         // Si el monto resultante es 0 o menor, no la contamos (anulación total)
@@ -69,8 +46,9 @@ export const salesToResume = (sales: ISaleResponse[], ref: Date): ISalesResume =
         const saleDate = new Date(sale.createdAt)
         const saleMeta = getChileDateMeta(saleDate)
 
-        const addSale = (period: keyof ITotals["sales"]) => {
+        const addSale = (period: keyof ISalesResume) => {
             const isEfectivo = sale.paymentType === "Efectivo"
+            const isWeb = sale.paymentType === "Web"
             if (isEfectivo) {
                 resume[period].efectivo.count += 1
                 resume[period].efectivo.amount += amount

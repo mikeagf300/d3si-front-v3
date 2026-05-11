@@ -42,20 +42,17 @@ export default function PrintSaleButton({ sale }: { sale: ISaleResponse }) {
               ${sale.SaleProducts.map(
                   (p) => `
                 <tr>
-                  <td>${p.StoreProduct.ProductVariation.sku}</td>
-                  <td>
-                    ${p.StoreProduct.ProductVariation.Product.name} 
-                    ${p.StoreProduct.ProductVariation.sizeNumber && `(${p.StoreProduct.ProductVariation.sizeNumber})`}
-                    </td>
+                  <td>${p.variation?.sku ?? ""}</td>
+                  <td>${p.variation?.sku ?? "Producto"}${p.variation?.size ? ` (${p.variation.size})` : ""}</td>
                   <td>${p.quantitySold}</td>
-                  <td>${toPrice(p.unitPrice)}</td>
-                  <td>${toPrice(p.unitPrice * p.quantitySold)}</td>
+                  <td>${toPrice(Number(p.unitPrice))}</td>
+                  <td>${toPrice(Number(p.subtotal ?? Number(p.unitPrice) * p.quantitySold))}</td>
                 </tr>
-              `
+              `,
               ).join("")}
             </tbody>
           </table>
-          <div class="total">Total: ${sale.total}</div>
+          <div class="total">Total: ${toPrice(Number(sale.total))}</div>
           <script>
           window.onload = function() {
             window.print();

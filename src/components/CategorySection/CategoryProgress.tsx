@@ -12,7 +12,7 @@ import type { IProduct } from "@/interfaces/products/IProduct"
 import type { ICategory } from "@/interfaces/categories/ICategory"
 
 interface CategoryProgressProps {
-    products: IProduct[]
+    products: any[]
     categories: ICategory[]
 }
 

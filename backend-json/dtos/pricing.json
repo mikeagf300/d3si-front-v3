@@ -1,0 +1,262 @@
+{
+    "SpecialOffer": {
+        "type": "object",
+        "properties": {
+            "offerID": {
+                "type": "string"
+            },
+            "storeProduct": {
+                "$ref": "#/components/schemas/StoreProduct"
+            },
+            "description": {
+                "type": "string"
+            },
+            "discountType": {
+                "enum": ["PERCENTAGE", "FIXED_AMOUNT", "FIXED_PRICE"],
+                "type": "string"
+            },
+            "value": {
+                "type": "number"
+            },
+            "scope": {
+                "enum": ["UNIT", "TOTAL"],
+                "type": "string"
+            },
+            "exclusive": {
+                "type": "boolean"
+            },
+            "startDate": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "endDate": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "isActive": {
+                "type": "boolean"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": [
+            "offerID",
+            "storeProduct",
+            "discountType",
+            "value",
+            "scope",
+            "exclusive",
+            "startDate",
+            "isActive",
+            "createdAt",
+            "updatedAt"
+        ]
+    },
+    "UpdatePriceDto": {
+        "type": "object",
+        "properties": {
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda"
+            },
+            "variationID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la variación del producto"
+            },
+            "priceType": {
+                "enum": ["cost", "list"],
+                "type": "string",
+                "description": "Tipo de precio: COST (Costo) o LIST (Venta)"
+            },
+            "newPrice": {
+                "type": "number",
+                "description": "Nuevo valor del precio"
+            },
+            "reason": {
+                "type": "string",
+                "description": "Razón del cambio de precio"
+            },
+            "changedBy": {
+                "type": "string",
+                "description": "Nombre o ID del usuario que realizó el cambio"
+            }
+        },
+        "required": ["storeID", "variationID", "priceType", "newPrice"]
+    },
+    "PriceHistory": {
+        "type": "object",
+        "properties": {
+            "historyID": {
+                "type": "string"
+            },
+            "storeProduct": {
+                "$ref": "#/components/schemas/StoreProduct"
+            },
+            "priceType": {
+                "enum": ["cost", "list"],
+                "type": "string"
+            },
+            "oldPrice": {
+                "type": "number"
+            },
+            "newPrice": {
+                "type": "number"
+            },
+            "reason": {
+                "type": "string"
+            },
+            "effectiveDate": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "changedBy": {
+                "type": "string"
+            }
+        },
+        "required": ["historyID", "storeProduct", "priceType", "oldPrice", "newPrice", "effectiveDate"]
+    },
+    "CreateSpecialOfferDto": {
+        "type": "object",
+        "properties": {
+            "storeProductID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID del producto en la tienda (StoreProduct)"
+            },
+            "description": {
+                "type": "string",
+                "description": "Descripción o motivo de la oferta"
+            },
+            "discountType": {
+                "enum": ["PERCENTAGE", "FIXED_AMOUNT", "FIXED_PRICE"],
+                "type": "string",
+                "description": "Tipo de descuento: PERCENTAGE, FIXED_AMOUNT, FIXED_PRICE"
+            },
+            "value": {
+                "type": "number",
+                "description": "Valor numérico del descuento o precio final"
+            },
+            "scope": {
+                "enum": ["UNIT", "TOTAL"],
+                "type": "string",
+                "description": "Ámbito del descuento: UNIT (por unidad) o TOTAL (sobre el total)"
+            },
+            "exclusive": {
+                "type": "boolean",
+                "description": "Si la oferta es exclusiva (impide descuentos manuales)"
+            },
+            "startDate": {
+                "type": "string",
+                "description": "Fecha de inicio de la oferta",
+                "example": "2024-01-01T00:00:00Z"
+            },
+            "endDate": {
+                "type": "string",
+                "description": "Fecha de término de la oferta (opcional)"
+            },
+            "isActive": {
+                "type": "boolean",
+                "description": "Si la oferta está activa o no",
+                "default": true
+            }
+        },
+        "required": ["storeProductID", "discountType", "value", "startDate"]
+    },
+    "UpdateSpecialOfferDto": {
+        "type": "object",
+        "properties": {
+            "storeProductID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID del producto en la tienda (StoreProduct)"
+            },
+            "description": {
+                "type": "string",
+                "description": "Descripción o motivo de la oferta"
+            },
+            "discountType": {
+                "enum": ["PERCENTAGE", "FIXED_AMOUNT", "FIXED_PRICE"],
+                "type": "string",
+                "description": "Tipo de descuento: PERCENTAGE, FIXED_AMOUNT, FIXED_PRICE"
+            },
+            "value": {
+                "type": "number",
+                "description": "Valor numérico del descuento o precio final"
+            },
+            "scope": {
+                "enum": ["UNIT", "TOTAL"],
+                "type": "string",
+                "description": "Ámbito del descuento: UNIT (por unidad) o TOTAL (sobre el total)"
+            },
+            "exclusive": {
+                "type": "boolean",
+                "description": "Si la oferta es exclusiva (impide descuentos manuales)"
+            },
+            "startDate": {
+                "type": "string",
+                "description": "Fecha de inicio de la oferta",
+                "example": "2024-01-01T00:00:00Z"
+            },
+            "endDate": {
+                "type": "string",
+                "description": "Fecha de término de la oferta (opcional)"
+            },
+            "isActive": {
+                "type": "boolean",
+                "description": "Si la oferta está activa o no",
+                "default": true
+            }
+        }
+    },
+    "CalculatePriceDto": {
+        "type": "object",
+        "properties": {
+            "storeProductID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID del producto en tienda (StoreProduct)"
+            },
+            "quantity": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Cantidad de unidades a calcular",
+                "default": 1
+            },
+            "userID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID del usuario que solicita un descuento manual"
+            },
+            "manualDiscount": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Descuento manual porcentual a aplicar (0-100)"
+            },
+            "baseUnitPrice": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Precio base por unidad precargado desde otro flujo"
+            },
+            "priceCost": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Costo por unidad precargado desde otro flujo"
+            },
+            "pricingDate": {
+                "type": "string",
+                "description": "Fecha de pricing a utilizar en el cálculo",
+                "example": "2026-04-15T12:00:00Z"
+            }
+        },
+        "required": ["storeProductID"]
+    }
+}

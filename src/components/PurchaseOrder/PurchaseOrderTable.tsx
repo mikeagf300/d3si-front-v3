@@ -97,7 +97,7 @@ export function PurchaseOrderTable({ currentItems }: { currentItems: PurchaseOrd
     })
 
     // Aplanamos los grupos ordenados de vuelta a un array y marcamos el primer item de cada grupo
-    currentItems = sortedGroups.flatMap((group) => {
+    const displayItems = sortedGroups.flatMap((group) => {
         // Marcamos la primera variación de cada grupo como isFirst
         return group.map((item, index) => ({
             ...item,
@@ -160,7 +160,7 @@ export function PurchaseOrderTable({ currentItems }: { currentItems: PurchaseOrd
                         </TableHeader>
 
                         <TableBody>
-                            {currentItems.map(({ product, variation, isFirst }, index) => {
+                            {displayItems.map(({ product, variation, isFirst }, index) => {
                                 // Stock de la tienda seleccionada
                                 let stockTienda = 0
                                 if (storeSelected && storeSelected.storeID) {

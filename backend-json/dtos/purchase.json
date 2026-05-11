@@ -1,0 +1,276 @@
+{
+    "PurchaseOrderItemDto": {
+        "type": "object",
+        "properties": {
+            "variationID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la variación solicitada",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            },
+            "quantity": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Cantidad solicitada",
+                "example": 2
+            },
+            "unitPrice": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Precio neto unitario pactado en la OC",
+                "example": 37000
+            }
+        },
+        "required": ["variationID", "quantity", "unitPrice"]
+    },
+    "CreatePurchaseOrderDto": {
+        "type": "object",
+        "properties": {
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Tienda a la que se envía la OC",
+                "example": "123e4567-e89b-12d3-a456-426614174111"
+            },
+            "isThirdParty": {
+                "type": "boolean",
+                "description": "Indica si la OC es para un tercero",
+                "default": false
+            },
+            "dueDate": {
+                "type": "string",
+                "description": "Fecha de vencimiento de pago",
+                "example": "2025-11-30"
+            },
+            "dteNumber": {
+                "type": "string",
+                "description": "Número de DTE asociado",
+                "example": "123456789"
+            },
+            "discount": {
+                "type": "number",
+                "description": "Descuento total en pesos",
+                "example": 0,
+                "default": 0
+            },
+            "items": {
+                "description": "Detalle de productos solicitados",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/PurchaseOrderItemDto"
+                }
+            }
+        },
+        "required": ["storeID", "items"]
+    },
+    "PurchaseOrder": {
+        "type": "object",
+        "properties": {
+            "purchaseOrderID": {
+                "type": "string"
+            },
+            "folio": {
+                "type": "string"
+            },
+            "store": {
+                "$ref": "#/components/schemas/Store"
+            },
+            "paymentStatus": {
+                "type": "object"
+            },
+            "isThirdParty": {
+                "type": "boolean"
+            },
+            "issueDate": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "dueDate": {
+                "format": "date-time",
+                "type": "string",
+                "nullable": true
+            },
+            "dteNumber": {
+                "type": "string",
+                "nullable": true
+            },
+            "totalProducts": {
+                "type": "number"
+            },
+            "subtotal": {
+                "type": "number"
+            },
+            "discount": {
+                "type": "number"
+            },
+            "netTotal": {
+                "type": "number"
+            },
+            "tax": {
+                "type": "number"
+            },
+            "total": {
+                "type": "number"
+            },
+            "items": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/PurchaseOrderItem"
+                }
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": [
+            "purchaseOrderID",
+            "folio",
+            "store",
+            "paymentStatus",
+            "isThirdParty",
+            "issueDate",
+            "dueDate",
+            "dteNumber",
+            "totalProducts",
+            "subtotal",
+            "discount",
+            "netTotal",
+            "tax",
+            "total",
+            "items",
+            "createdAt",
+            "updatedAt"
+        ]
+    },
+    "PurchaseOrderItem": {
+        "type": "object",
+        "properties": {
+            "purchaseOrderItemID": {
+                "type": "string"
+            },
+            "purchaseOrder": {
+                "$ref": "#/components/schemas/PurchaseOrder"
+            },
+            "variation": {
+                "$ref": "#/components/schemas/ProductVariation"
+            },
+            "unitPrice": {
+                "type": "number"
+            },
+            "subtotal": {
+                "type": "number"
+            },
+            "quantityRequested": {
+                "type": "number"
+            },
+            "quantityReceived": {
+                "type": "number"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+            }
+        },
+        "required": [
+            "purchaseOrderItemID",
+            "purchaseOrder",
+            "variation",
+            "unitPrice",
+            "subtotal",
+            "quantityRequested",
+            "quantityReceived",
+            "createdAt",
+            "updatedAt"
+        ]
+    },
+    "UpdatePurchaseOrderDto": {
+        "type": "object",
+        "properties": {
+            "paymentStatus": {
+                "type": "string",
+                "description": "Estado del pago de la OC",
+                "enum": ["Pagado", "Pendiente", "Anulado"]
+            },
+            "dueDate": {
+                "type": "string",
+                "description": "Fecha de vencimiento",
+                "example": "2025-11-30"
+            },
+            "dteNumber": {
+                "type": "string",
+                "description": "Número de DTE",
+                "example": "112233"
+            },
+            "discount": {
+                "type": "number",
+                "description": "Descuento total en pesos",
+                "example": 5000
+            },
+            "isThirdParty": {
+                "type": "boolean",
+                "description": "Marcar la OC como para un tercero"
+            },
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Permite cambiar la tienda destino"
+            }
+        }
+    },
+    "UpdatePurchaseOrderStatusDto": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": ["Pagado", "Pendiente", "Anulado"],
+                "description": "Nuevo estado de la orden de compra"
+            }
+        },
+        "required": ["status"]
+    },
+    "VerifyItemDto": {
+        "type": "object",
+        "properties": {
+            "variationID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Variación escaneada",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            },
+            "quantityReceived": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Cantidad recibida/escaneada",
+                "example": 1
+            },
+            "unitPrice": {
+                "type": "number",
+                "description": "Precio neto unitario usado al ajustar la OC",
+                "example": 37000
+            }
+        },
+        "required": ["variationID", "quantityReceived"]
+    },
+    "VerifyPurchaseOrderDto": {
+        "type": "object",
+        "properties": {
+            "items": {
+                "description": "Detalle de escaneos para validar la recepción de la orden",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/VerifyItemDto"
+                }
+            }
+        },
+        "required": ["items"]
+    }
+}

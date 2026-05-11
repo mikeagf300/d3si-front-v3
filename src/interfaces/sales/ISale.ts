@@ -1,5 +1,3 @@
-import { IProduct } from "../products/IProduct"
-import { IProductVariation } from "../products/IProductVariation"
 import { IStore } from "../stores/IStore"
 import { IUser } from "../users/IUser"
 
@@ -7,11 +5,20 @@ import { IUser } from "../users/IUser"
 export type PaymentType = "Efectivo" | "Debito" | "Credito"
 export type PaymentStatus = "Pagado" | "Pendiente" | "Anulado"
 
+export interface ISaleItemRequest {
+    variationID: string
+    quantity: number
+    unitPrice: number
+}
+
 export interface ISaleRequest {
     storeID: string
     paymentType: PaymentType
+    items: ISaleItemRequest[]
+}
+
+export interface IUpdateSaleStatus {
     status: PaymentStatus
-    SaleProducts: Omit<ISaleProduct, "SaleProductID" | "StoreProduct">[]
 }
 
 // Para representar un producto vendido
@@ -20,14 +27,27 @@ export interface IProductSold {
     quantitySold: number
 }
 
+// Variación de producto dentro de una venta (tal como la devuelve el API)
+export interface IVariationInSale {
+    variationID: string
+    productID: string
+    sku: string
+    color: string
+    size: string
+    createdAt: string
+    updatedAt: string
+}
+
 export interface ISaleProduct {
-    SaleProductID: string
-    storeProductID: string
+    saleProductID: string
+    saleID: string
+    variationID: string
+    variation: IVariationInSale
+    unitPrice: number | string
+    subtotal: number | string
     quantitySold: number
-    unitPrice: number
-    StoreProduct: {
-        ProductVariation: IProductVariation & { Product: IProduct }
-    }
+    createdAt: string
+    updatedAt: string
 }
 
 // Para representar una venta que viene desde el backend (respuesta)
@@ -46,7 +66,9 @@ export interface ISaleResponse {
 export interface IsaleProductReturned {
     returnItemID: string
     returnID: string
-    storeProductID: string
+    storeProductID?: string
+    saleProductID?: string
+    variationID?: string
     returnedQuantity: number
     unitPrice: string
     createdAt: string
@@ -69,7 +91,9 @@ export interface ISaleReturn {
 
 export type ISendSaleReturn = Omit<ISaleReturn, "returnID" | "createdAt" | "updatedAt" | "User" | "saleID"> & {
     returnedProducts?: {
-        storeProductID: string
+        storeProductID?: string
+        saleProductID?: string
+        variationID?: string
         quantity: number
     }[]
 }

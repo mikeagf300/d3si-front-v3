@@ -1,0 +1,88 @@
+{
+    "GroupedItemDto": {
+        "type": "object",
+        "properties": {
+            "key": {
+                "type": "string",
+                "description": "Clave del grupo, p.ej. tipo de pago o estado"
+            },
+            "count": {
+                "type": "number",
+                "description": "Cantidad de ventas en el grupo"
+            },
+            "total": {
+                "type": "number",
+                "description": "Total acumulado en el grupo"
+            }
+        },
+        "required": ["key", "count"]
+    },
+    "PeriodSummaryItem": {
+        "type": "object",
+        "properties": {
+            "count": {
+                "type": "number",
+                "description": "Cantidad de ventas en el periodo"
+            },
+            "total": {
+                "type": "number",
+                "description": "Total de ventas en el periodo"
+            }
+        },
+        "required": ["count", "total"]
+    },
+    "SalesReportDto": {
+        "type": "object",
+        "properties": {
+            "groupedByPaymentType": {
+                "description": "Agrupado por tipo de pago",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/GroupedItemDto"
+                }
+            },
+            "groupedByStatus": {
+                "description": "Agrupado por estado",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/GroupedItemDto"
+                }
+            },
+            "periodSummary": {
+                "type": "object",
+                "properties": {
+                    "today": {
+                        "$ref": "#/components/schemas/PeriodSummaryItem"
+                    },
+                    "yesterday": {
+                        "$ref": "#/components/schemas/PeriodSummaryItem"
+                    },
+                    "month": {
+                        "$ref": "#/components/schemas/PeriodSummaryItem"
+                    }
+                },
+                "required": ["today", "yesterday", "month"]
+            },
+            "sales": {
+                "type": "array",
+                "description": "Listado de ventas dentro del rango (detalle)"
+            },
+            "meta": {
+                "type": "object",
+                "properties": {
+                    "page": {
+                        "type": "number"
+                    },
+                    "limit": {
+                        "type": "number"
+                    },
+                    "total": {
+                        "type": "number"
+                    }
+                },
+                "required": ["page", "limit", "total"]
+            }
+        },
+        "required": ["groupedByPaymentType", "groupedByStatus", "periodSummary", "sales", "meta"]
+    }
+}

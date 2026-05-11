@@ -1,0 +1,69 @@
+{
+    "CreateExpenseDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Nombre del gasto",
+                "example": "Alquiler de oficina"
+            },
+            "deductibleDate": {
+                "type": "string",
+                "description": "Fecha deducible del gasto",
+                "example": "2023-10-27T10:00:00Z"
+            },
+            "amount": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Monto del gasto",
+                "example": 1500.5
+            },
+            "type": {
+                "enum": ["financial", "operational", "administrative"],
+                "type": "string",
+                "description": "Tipo de gasto",
+                "example": "administrative"
+            },
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda asociada al gasto",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+        },
+        "required": ["name", "deductibleDate", "amount", "type", "storeID"]
+    },
+    "UpdateExpenseDto": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Nombre del gasto",
+                "example": "Alquiler de oficina"
+            },
+            "deductibleDate": {
+                "type": "string",
+                "description": "Fecha deducible del gasto",
+                "example": "2023-10-27T10:00:00Z"
+            },
+            "amount": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Monto del gasto",
+                "example": 1500.5
+            },
+            "type": {
+                "enum": ["financial", "operational", "administrative"],
+                "type": "string",
+                "description": "Tipo de gasto",
+                "example": "administrative"
+            },
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda asociada al gasto",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+        }
+    }
+}

@@ -1,5 +1,10 @@
 import type { NextConfig } from "next"
 
+// Fix SSL certificate verification in development against Railway/self-signed certs
+if (process.env.NODE_ENV !== "production") {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+}
+
 const nextConfig: NextConfig = {
     images: {
         remotePatterns: [
@@ -17,11 +22,27 @@ const nextConfig: NextConfig = {
             },
             {
                 protocol: "https",
+                hostname: "*.bing.net",
+            },
+            {
+                protocol: "https",
                 hostname: "*.vtexassets.com",
             },
             {
                 protocol: "https",
                 hostname: "*.procircuit.cl",
+            },
+            {
+                protocol: "https",
+                hostname: "example.com",
+            },
+            {
+                protocol: "https",
+                hostname: "*.licdn.com",
+            },
+            {
+                protocol: "https",
+                hostname: "*.ejemplo.com",
             },
         ],
     },

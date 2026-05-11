@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useTienda } from "@/stores/tienda.store"
 import { getAllUsers } from "@/actions/users/getAllUsers"
 import { getAllStores } from "@/actions/stores/getAllStores"
@@ -25,28 +25,29 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
     const [isLoading, setIsLoading] = useState(false)
     const [showSkeleton, setShowSkeleton] = useState(false)
 
-    const loadData = async (view: ViewType) => {
-        if (view === "initial" || view === "gastos") return
+    const loadData = useCallback(
+        async (view: ViewType) => {
+            if (view === "initial" || view === "gastos") return
 
-        setIsLoading(true)
-        try {
-            if (view === "users") {
-                const usuarios = await getAllUsers()
-                setUsers(usuarios)
-            } else if (view === "stores") {
-                const tiendas = await getAllStores()
-                setStores(tiendas)
+            setIsLoading(true)
+            try {
+                if (view === "users") {
+                    const usuarios = await getAllUsers()
+                    setUsers(usuarios)
+                } else if (view === "stores") {
+                    const tiendas = await getAllStores()
+                    setStores(tiendas)
+                }
+            } catch (error) {
+                console.error("Error loading data:", error)
+            } finally {
+                setIsLoading(false)
             }
-        } catch (error) {
-            console.error("Error loading data:", error)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-    /**
-     * Controla si se muestra el skeleton solo si tarda en cargar.
-     * Mostrar skeleton si tarda más de 300ms.
-     */
+        },
+        [setUsers, setStores],
+    )
+    // Controla si se muestra el skeleton solo si tarda en cargar.
+    // Mostrar skeleton si tarda más de 300ms.
 
     useEffect(() => {
         let timer: NodeJS.Timeout

@@ -8,6 +8,7 @@ import { IProduct } from "@/interfaces/products/IProduct"
 import { IProductVariation } from "@/interfaces/products/IProductVariation"
 import { QuoteDocument } from "@/components/Quotes/pdf/QuoteDocument"
 import { pdf } from "@react-pdf/renderer"
+import { getProductById } from "@/actions/products/getProductById"
 import { ClientDataForm } from "@/components/Quotes//ClientDataForm/ClientDataForm"
 import { ExpirationConfig } from "@/components/Quotes/ExpirationConfig/ExpirationConfig"
 import { ProductImages } from "@/components/Quotes/Products/ProductImages"
@@ -50,9 +51,7 @@ export function QuotesClient({ products }: QuotesClientProps) {
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
     const [observaciones, setObservaciones] = useState("")
     const [nroCotizacion, setNroCotizacion] = useState(5100)
-    const [customProducts, setCustomProducts] = useState<IProduct[]>([]) // Para productos personalizados
-
-    // Estados para datos del cliente
+    const [customProducts, setCustomProducts] = useState<IProduct[]>([])
     const [clientData, setClientData] = useState({
         rut: "",
         razonSocial: "",
@@ -69,18 +68,15 @@ export function QuotesClient({ products }: QuotesClientProps) {
         }
     }, [])
 
-    // Combinar productos originales con productos personalizados
     const allProducts = useMemo(() => {
         return [...products, ...customProducts]
     }, [products, customProducts])
 
-    // Productos filtrados que excluyen los ya seleccionados
     const filteredProducts = useMemo(() => {
         const selectedProductIds = new Set(selectedProducts.map((sp) => sp.product.productID))
         return allProducts.filter((product) => !selectedProductIds.has(product.productID))
     }, [allProducts, selectedProducts])
 
-    // Productos únicos seleccionados con contador
     const uniqueSelectedProducts = useMemo(() => {
         const productCounts = new Map<string, { product: IProduct; count: number }>()
 
@@ -97,24 +93,24 @@ export function QuotesClient({ products }: QuotesClientProps) {
     }, [selectedProducts])
 
     useEffect(() => {
-        const updatedImages = uniqueSelectedProducts.map((productData) => {
-            const existing = productsImage.find((p) => p.id === productData.product.productID)
-            if (existing) return existing
+        setProductsImage((prev) => {
+            return uniqueSelectedProducts.map((productData) => {
+                const existing = prev.find((p) => p.id === productData.product.productID)
+                if (existing) return existing
 
-            if (productData.product.image) {
+                if (productData.product.image) {
+                    return {
+                        id: productData.product.productID,
+                        image: productData.product.image,
+                    }
+                }
+
                 return {
                     id: productData.product.productID,
-                    image: productData.product.image,
+                    image: "",
                 }
-            }
-
-            return {
-                id: productData.product.productID,
-                image: "",
-            }
+            })
         })
-
-        setProductsImage(updatedImages)
     }, [uniqueSelectedProducts])
 
     const handleImageUpload = (productId: string, file: File) => {
@@ -123,53 +119,46 @@ export function QuotesClient({ products }: QuotesClientProps) {
             const base64Image = reader.result as string
             setProductsImage((prev) => prev.map((p) => (p.id === productId ? { ...p, image: base64Image } : p)))
         }
+
         if (file) {
             reader.readAsDataURL(file)
         }
     }
 
     const handleProductSelect = (productId: string) => {
-        const product = allProducts.find((p) => p.productID === productId)
+        const product = allProducts.find((item) => item.productID === productId)
         if (!product) return
 
-        // Obtener modelos disponibles del producto (filtrar valores vacíos y duplicados)
-        const availableModels =
-            product.ProductVariations?.map((v) => v.sizeNumber)
-                .filter((size) => size && size.trim() !== "")
-                .filter((size, index, arr) => arr.indexOf(size) === index) // Eliminar duplicados
-                .join(", ") || ""
-
-        // Calcular precio promedio o usar el primer precio disponible
         const variations = product.ProductVariations || []
-        const validPrices = variations.map((v) => Number(v.priceList || 0)).filter((price) => price > 0)
-
-        const avgPrice =
-            validPrices.length > 0 ? validPrices.reduce((sum, price) => sum + price, 0) / validPrices.length : 0
+        const validVariations = variations.filter((variation) => variation.sizeNumber?.trim())
+        const models = Array.from(new Set(validVariations.map((variation) => variation.sizeNumber.trim())))
+        const priceSource = validVariations.length > 0 ? validVariations : variations
+        const totalPrice = priceSource.reduce((sum, variation) => sum + Number(variation.priceList || 0), 0)
+        const avgPrice = priceSource.length > 0 ? totalPrice / priceSource.length : 0
 
         const newSelectedProduct: SelectedProduct = {
             product,
             quantity: 1,
-            availableModels,
-            unitPrice: Math.round(avgPrice), // Redondear al entero más cercano
+            availableModels: models.join(", "),
+            unitPrice: Math.round(avgPrice),
             isCustomProduct: customProducts.some((cp) => cp.productID === productId),
         }
 
-        setSelectedProducts([...selectedProducts, newSelectedProduct])
+        setSelectedProducts((prev) => [...prev, newSelectedProduct])
     }
 
     const handleAddNewProduct = (productData: { name: string; image?: string }) => {
-        // Crear un producto personalizado
         const newProductId = `custom_${Date.now()}`
         const newProduct: IProduct = {
             productID: newProductId,
             name: productData.name,
             image: productData.image || "",
-            ProductVariations: [], // Los productos personalizados no tienen variaciones predefinidas
+            ProductVariations: [],
             totalProducts: 0,
             categoryID: "",
             genre: "Unisex",
-            brand: "Otro", // Usar una marca existente
-            stock: 0, // Agregar la propiedad stock requerida
+            brand: "Otro",
+            stock: 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             Category: undefined,
@@ -177,15 +166,12 @@ export function QuotesClient({ products }: QuotesClientProps) {
             wooID: null,
         }
 
-        // Agregarlo a la lista de productos personalizados
         setCustomProducts((prev) => [...prev, newProduct])
 
-        // Agregarlo también a la imagen si tiene una
         if (productData.image) {
             setProductsImage((prev) => [...prev, { id: newProductId, image: productData.image || "" }])
         }
 
-        // Seleccionarlo automáticamente
         const newSelectedProduct: SelectedProduct = {
             product: newProduct,
             quantity: 1,
@@ -194,31 +180,28 @@ export function QuotesClient({ products }: QuotesClientProps) {
             isCustomProduct: true,
         }
 
-        setSelectedProducts([...selectedProducts, newSelectedProduct])
+        setSelectedProducts((prev) => [...prev, newSelectedProduct])
     }
 
     const handleQuantityChange = (productId: string, quantity: number) => {
-        setSelectedProducts(
-            selectedProducts.map((sp) => (sp.product.productID === productId ? { ...sp, quantity } : sp))
-        )
+        setSelectedProducts((prev) => prev.map((sp) => (sp.product.productID === productId ? { ...sp, quantity } : sp)))
     }
 
     const handleModelsChange = (productId: string, models: string) => {
-        setSelectedProducts(
-            selectedProducts.map((sp) => (sp.product.productID === productId ? { ...sp, availableModels: models } : sp))
+        setSelectedProducts((prev) =>
+            prev.map((sp) => (sp.product.productID === productId ? { ...sp, availableModels: models } : sp)),
         )
     }
 
     const handleUnitPriceChange = (productId: string, price: number) => {
-        setSelectedProducts(
-            selectedProducts.map((sp) => (sp.product.productID === productId ? { ...sp, unitPrice: price } : sp))
+        setSelectedProducts((prev) =>
+            prev.map((sp) => (sp.product.productID === productId ? { ...sp, unitPrice: price } : sp)),
         )
     }
 
     const handleRemoveProduct = (productId: string) => {
-        setSelectedProducts(selectedProducts.filter((sp) => sp.product.productID !== productId))
+        setSelectedProducts((prev) => prev.filter((sp) => sp.product.productID !== productId))
 
-        // Si es un producto personalizado y no se usa en ningún lado más, eliminarlo
         const isCustomProduct = customProducts.some((cp) => cp.productID === productId)
         if (isCustomProduct) {
             setCustomProducts((prev) => prev.filter((cp) => cp.productID !== productId))
@@ -232,21 +215,20 @@ export function QuotesClient({ products }: QuotesClientProps) {
         meses: Number(vencimientoCantidad) === 1 ? "mes" : "meses",
     }
 
-    // Cálculos financieros mejorados
     const montoNeto = selectedProducts.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0)
 
-    // Separar descuentos (porcentaje) de cargos (valor fijo)
     const totalDescuentos = discounts
-        .filter((d) => d.type === "Descuento")
-        .reduce((acc, d) => acc + montoNeto * (d.percentage / 100), 0)
+        .filter((discount) => discount.type === "Descuento")
+        .reduce((acc, discount) => acc + montoNeto * (discount.percentage / 100), 0)
 
-    const totalCargos = discounts.filter((d) => d.type === "Cargo").reduce((acc, d) => acc + d.percentage, 0)
+    const totalCargos = discounts
+        .filter((discount) => discount.type === "Cargo")
+        .reduce((acc, discount) => acc + discount.percentage, 0)
 
     const subtotal = montoNeto - totalDescuentos + totalCargos
     const iva = subtotal * 0.19
     const montoTotal = subtotal + iva
 
-    // Procesamiento de descuentos/cargos para el PDF
     const processedDiscounts: ProcessedDiscount[] = useMemo(() => {
         return discounts.map((discount) => {
             let calculatedPercentage: number
@@ -271,28 +253,55 @@ export function QuotesClient({ products }: QuotesClientProps) {
         })
     }, [discounts, montoNeto])
 
-    // Función helper para crear variaciones mock
-    const createMockVariation = (productId: string, models: string, price: number): IProductVariation => {
-        return {
-            variationID: `${productId}_default`,
-            productID: productId,
-            sizeNumber: models,
-            priceList: price.toString(),
-            priceCost: price.toString(),
-            sku: "",
-            stockQuantity: 0,
-            StoreProducts: [],
-            Stores: [],
-        } as unknown as IProductVariation
-    }
-
     const handleGeneratePDF = async () => {
-        // Convertir selectedProducts al formato esperado por el PDF
-        const pdfSelectedProducts = selectedProducts.map((sp) => ({
-            product: sp.product,
-            variation: sp.variation || createMockVariation(sp.product.productID, sp.availableModels, sp.unitPrice),
-            quantity: sp.quantity,
-        }))
+        const pdfSelectedProducts = await Promise.all(
+            selectedProducts.map(async (sp) => {
+                if (sp.variation) {
+                    return { product: sp.product, variation: sp.variation, quantity: sp.quantity }
+                }
+
+                try {
+                    const prod = await getProductById(sp.product.productID)
+                    const variations = prod.ProductVariations || []
+                    const wantedSizes = sp.availableModels
+                        .split(",")
+                        .map((size) => size.trim())
+                        .filter(Boolean)
+
+                    let foundVar: IProductVariation | undefined
+
+                    if (wantedSizes.length > 0) {
+                        foundVar = variations.find((variation) => wantedSizes.includes(variation.sizeNumber))
+                    }
+
+                    if (!foundVar) {
+                        foundVar = variations.find((variation) => Number(variation.priceList) > 0) || variations[0]
+                    }
+
+                    if (foundVar) {
+                        return { product: prod, variation: foundVar, quantity: sp.quantity }
+                    }
+                } catch (error) {
+                    console.warn("QuotesClient: error fetching product for PDF", error)
+                }
+
+                const fallback: IProductVariation = {
+                    variationID: `${sp.product.productID}_fallback`,
+                    productID: sp.product.productID,
+                    sizeNumber: sp.availableModels || "",
+                    priceList: sp.unitPrice || 0,
+                    priceCost: sp.unitPrice || 0,
+                    sku: "",
+                    stockQuantity: 0,
+                    StoreProducts: [],
+                    Stores: [],
+                    createdAt: "",
+                    updatedAt: "",
+                }
+
+                return { product: sp.product, variation: fallback, quantity: sp.quantity }
+            }),
+        )
 
         const blob = await pdf(
             <QuoteDocument
@@ -317,7 +326,7 @@ export function QuotesClient({ products }: QuotesClientProps) {
                     telefono: clientData.telefono,
                 }}
                 observaciones={observaciones}
-            />
+            />,
         ).toBlob()
 
         const url = URL.createObjectURL(blob)
@@ -326,6 +335,7 @@ export function QuotesClient({ products }: QuotesClientProps) {
         link.download = `Cotizacion_${nroCotizacion}.pdf`
         link.click()
         URL.revokeObjectURL(url)
+
         const nextNro = nroCotizacion + 1
         setNroCotizacion(nextNro)
         localStorage.setItem("nroCotizacion", nextNro.toString())
@@ -333,7 +343,6 @@ export function QuotesClient({ products }: QuotesClientProps) {
 
     return (
         <>
-            {/* Configuración de Vencimiento */}
             <ExpirationConfig
                 vencimientoCantidad={vencimientoCantidad}
                 vencimientoPeriodo={vencimientoPeriodo}
@@ -343,24 +352,20 @@ export function QuotesClient({ products }: QuotesClientProps) {
                 onPeriodoChange={setVencimientoPeriodo}
             />
 
-            {/* Formulario de Datos del Cliente */}
             <ClientDataForm clientData={clientData} onClientDataChange={setClientData} />
 
-            {/* Imágenes de productos únicos con contador */}
             <ProductImages
                 uniqueSelectedProducts={uniqueSelectedProducts}
                 productsImage={productsImage}
                 onImageUpload={handleImageUpload}
             />
 
-            {/* Selector de Productos */}
             <ProductSelector
                 filteredProducts={filteredProducts}
                 onProductSelect={handleProductSelect}
                 onAddNewProduct={handleAddNewProduct}
             />
 
-            {/* Tabla de Productos */}
             {selectedProducts.length > 0 && (
                 <ProductTable
                     selectedProducts={selectedProducts}
@@ -371,10 +376,8 @@ export function QuotesClient({ products }: QuotesClientProps) {
                 />
             )}
 
-            {/* Sección de Descuentos */}
             <DiscountsSection discounts={discounts} montoNeto={montoNeto} onDiscountsChange={setDiscounts} />
 
-            {/* Observaciones */}
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
                 <CardHeader>
                     <CardTitle className="text-slate-800 dark:text-white">Otras Observaciones</CardTitle>
@@ -383,13 +386,12 @@ export function QuotesClient({ products }: QuotesClientProps) {
                     <Textarea
                         placeholder="Observaciones adicionales sobre la cotización..."
                         value={observaciones}
-                        onChange={(e) => setObservaciones(e.target.value)}
+                        onChange={(event) => setObservaciones(event.target.value)}
                         className="min-h-[100px] bg-white dark:bg-slate-700"
                     />
                 </CardContent>
             </Card>
 
-            {/* Resumen Financiero */}
             <FinancialSummary
                 montoNeto={montoNeto}
                 totalDescuentos={totalDescuentos}
@@ -399,7 +401,6 @@ export function QuotesClient({ products }: QuotesClientProps) {
                 montoTotal={montoTotal}
             />
 
-            {/* Botón Generar Cotización */}
             <div className="text-center">
                 <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleGeneratePDF}>
                     Generar Cotización

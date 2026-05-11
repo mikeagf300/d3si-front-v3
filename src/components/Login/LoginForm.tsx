@@ -4,8 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "../ui/button"
 import { login } from "@/actions/auth/authActions"
-import { getAllUsers } from "@/actions/users/getAllUsers"
-import { getAllStores } from "@/actions/stores/getAllStores"
+import { getUserStores } from "@/actions/users/getUserStores"
 import { useAuth } from "@/stores/user.store"
 import { toast } from "sonner"
 import { useTienda } from "@/stores/tienda.store"
@@ -18,8 +17,8 @@ export default function LoginForm() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const router = useRouter()
-    const { setUser, setUsers } = useAuth()
-    const { setStores, setStoreSelected, setStoresUser } = useTienda()
+    const { setUser } = useAuth()
+    const { setStoreSelected, setStoresUser } = useTienda()
     const [isLoading, setLoading] = useState(false)
     const { isDarkMode, setIsDarkMode } = useDarkMode()
     const handleSubmit = async (e: React.FormEvent) => {
@@ -28,29 +27,30 @@ export default function LoginForm() {
         try {
             setLoading(true)
             const data = await login(email, password)
-            if (!data.cleanUsr) {
+            if (!data.user) {
                 toast.error("Email o contraseña incorrectos")
                 return
             }
 
-            // Guarda el usuario completo en Zustand
-            setUser(data.cleanUsr)
+            setUser(data.user, data.accessToken)
+            const userStores = await getUserStores(data.user.userID)
+            const resolvedStoresFromUser = userStores
 
-            // 2. Cargar y guardar usuarios y tiendas
-            const [usuarios, tiendas] = await Promise.all([getAllUsers(), getAllStores()])
+            setStoresUser(resolvedStoresFromUser)
 
-            setUsers(usuarios)
-            setStores(tiendas)
-
-            const storesFromUser = tiendas.filter((t) => t.Users.some((u) => u.userID === data.cleanUsr.userID))
-            setStoresUser(storesFromUser)
-            setStoreSelected(storesFromUser[0])
-            const storeID = storesFromUser[0].storeID
-            toast.success("Inicio de sesión exitoso")
-            if (data.cleanUsr.role === Role.Consignado || data.cleanUsr.role === Role.Tercero) {
-                return router.push(`/home/purchaseOrder?storeID=${storeID}`)
+            if (resolvedStoresFromUser.length > 0) {
+                const selectedStore = resolvedStoresFromUser[0]
+                setStoreSelected(selectedStore)
+                const storeID = selectedStore.storeID
+                toast.success("Inicio de sesión exitoso")
+                if (data.user.role === Role.Consignado || data.user.role === Role.Tercero) {
+                    return router.push(`/home/purchaseOrder?storeID=${storeID}`)
+                }
+                router.push(`/home?storeID=${storeID}`)
+            } else {
+                toast.success("Inicio de sesión exitoso, verificando tiendas...")
+                router.push(`/home?storeID=all`)
             }
-            router.push(`/home?storeID=${storeID}`)
         } catch (err) {
             console.error(err)
             toast.error("Error inesperado al iniciar sesión")

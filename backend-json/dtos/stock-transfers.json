@@ -1,0 +1,234 @@
+{
+    "StockTransferItemDto": {
+        "type": "object",
+        "properties": {
+            "variationID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la variación del producto a transferir",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+            },
+            "stock": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Cantidad de unidades a transferir",
+                "example": 5
+            },
+            "priceCost": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Costo de compra por unidad (precio al que la tienda adquiere el producto)",
+                "example": 12000
+            }
+        },
+        "required": ["variationID", "stock", "priceCost"]
+    },
+    "TransferStockDto": {
+        "type": "object",
+        "properties": {
+            "targetStoreID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda que recibirá el stock",
+                "example": "123e4567-e89b-12d3-a456-426614174001"
+            },
+            "items": {
+                "description": "Lista de productos y cantidades a transferir",
+                "example": [
+                    {
+                        "variationID": "123e4567-e89b-12d3-a456-426614174000",
+                        "quantity": 5,
+                        "purchaseCost": 12000
+                    }
+                ],
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/StockTransferItemDto"
+                }
+            }
+        },
+        "required": ["targetStoreID", "items"]
+    },
+    "CreateInventoryMovementDto": {
+        "type": "object",
+        "properties": {
+            "storeID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda donde se realiza el movimiento",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "variationID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la variante del producto",
+                "example": "d8c7e96b-8d74-4b4e-9d8a-987654321012"
+            },
+            "quantity": {
+                "type": "number",
+                "description": "Cantidad involucrada en el movimiento (Obligatorio para VENTA, COMPRA, TRANSFERENCIA)",
+                "example": 5
+            },
+            "newStock": {
+                "type": "number",
+                "description": "Nuevo valor de stock (Obligatorio si el motivo es AJUSTE)",
+                "example": 100
+            },
+            "reason": {
+                "enum": ["SALE", "PURCHASE", "ADJUSTMENT", "TRANSFER_IN", "TRANSFER_OUT"],
+                "type": "string",
+                "description": "Motivo del movimiento",
+                "example": "ADJUSTMENT"
+            },
+            "referenceID": {
+                "type": "string",
+                "description": "ID de referencia opcional (ej. ID de venta o pedido)",
+                "example": "REF-12345"
+            }
+        },
+        "required": ["storeID", "variationID", "reason"]
+    },
+    "InventoryMovement": {
+        "type": "object",
+        "properties": {
+            "movementID": {
+                "type": "string",
+                "description": "ID único del movimiento",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "delta": {
+                "type": "number",
+                "description": "Cambio neto en el stock (positivo para entradas, negativo para salidas)",
+                "example": -5
+            },
+            "reason": {
+                "enum": ["SALE", "PURCHASE", "ADJUSTMENT", "TRANSFER_IN", "TRANSFER_OUT"],
+                "type": "string",
+                "description": "Motivo del movimiento de inventario",
+                "example": "SALE"
+            },
+            "referenceID": {
+                "type": "string",
+                "description": "ID de referencia externa (ID de venta, ID de transferencia, etc.)",
+                "example": "SALE-99123"
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha y hora del movimiento"
+            },
+            "store": {
+                "$ref": "#/components/schemas/Store"
+            },
+            "variation": {
+                "$ref": "#/components/schemas/ProductVariation"
+            }
+        },
+        "required": ["movementID", "delta", "reason", "createdAt", "store", "variation"]
+    },
+    "CreateStoreTransferDto": {
+        "type": "object",
+        "properties": {
+            "originStoreID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda que envía los productos",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "destinationStoreID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la tienda que recibe los productos",
+                "example": "660f9501-f30c-52e5-b827-557766551111"
+            }
+        },
+        "required": ["originStoreID", "destinationStoreID"]
+    },
+    "StoreTransfer": {
+        "type": "object",
+        "properties": {
+            "transferID": {
+                "type": "string",
+                "description": "ID de la transferencia",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "status": {
+                "enum": ["PENDING", "COMPLETED", "CANCELLED"],
+                "type": "string",
+                "description": "Estado actual de la transferencia",
+                "example": "PENDING"
+            },
+            "items": {
+                "description": "Lista de productos incluidos en la transferencia",
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/StoreTransferItem"
+                }
+            },
+            "createdAt": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha de creación del registro"
+            },
+            "updatedAt": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha de última modificación"
+            },
+            "completedAt": {
+                "format": "date-time",
+                "type": "string",
+                "description": "Fecha y hora en que se completó la transferencia",
+                "nullable": true
+            },
+            "originStore": {
+                "$ref": "#/components/schemas/Store"
+            },
+            "destinationStore": {
+                "$ref": "#/components/schemas/Store"
+            }
+        },
+        "required": ["transferID", "status", "items", "createdAt", "updatedAt", "originStore", "destinationStore"]
+    },
+    "StoreTransferItem": {
+        "type": "object",
+        "properties": {
+            "transferItemID": {
+                "type": "string",
+                "description": "ID del item en la transferencia",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "quantity": {
+                "type": "number",
+                "description": "Cantidad de unidades transferidas",
+                "example": 10,
+                "minimum": 1
+            },
+            "transfer": {
+                "$ref": "#/components/schemas/StoreTransfer"
+            },
+            "variation": {
+                "$ref": "#/components/schemas/ProductVariation"
+            }
+        },
+        "required": ["transferItemID", "quantity", "transfer", "variation"]
+    },
+    "AddTransferItemDto": {
+        "type": "object",
+        "properties": {
+            "variationID": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID de la variante del producto a transferir",
+                "example": "d8c7e96b-8d74-4b4e-9d8a-987654321012"
+            },
+            "quantity": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Cantidad de unidades a transferir",
+                "example": 10
+            }
+        },
+        "required": ["variationID", "quantity"]
+    }
+}

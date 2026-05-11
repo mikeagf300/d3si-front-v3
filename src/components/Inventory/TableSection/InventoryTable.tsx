@@ -1,43 +1,42 @@
 "use client"
 
-import type React from "react"
-import { MoreVertical, Trash2 } from "lucide-react"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { AddSizeModal } from "@/components/Modals/AddSizeModal"
+import { Tag, Trash2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MotionItem } from "@/components/Animations/motionItem"
-import type { IProduct } from "@/interfaces/products/IProduct"
+import type { IRawProduct, IProductVariationRaw } from "@/interfaces/products/IRawProduct"
 import { ICategory } from "@/interfaces/categories/ICategory"
 import { useAuth } from "@/stores/user.store"
 import { Role } from "@/lib/userRoles"
 import { inventoryStore } from "@/stores/inventory.store"
+import { useTienda } from "@/stores/tienda.store"
 import Image from "next/image"
 import useQueryParams from "@/hooks/useQueryParams"
-import { getProductById } from "@/actions/products/getProductById"
+import { findProductBySku } from "@/utils/findProductBySku"
 import { toPrice } from "@/utils/priceFormat"
 import { PrintbarcodeModal } from "./PrintBarcodeModal"
 import { useState } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { IProductVariation } from "@/interfaces/products/IProductVariation"
-import { toast } from "sonner"
-import { deleteVariation } from "@/actions/products/deleteProduct"
-import { useRouter } from "next/navigation"
+import type { FlattenedItem } from "@/interfaces/products/IFlatternProduct"
+import type { IProduct } from "@/interfaces/products/IProduct"
+import type { IStoreProduct } from "@/interfaces/products/IProductVariation"
+import { PricingModal } from "./PricingModal"
 
 interface InventoryTableProps {
-    currentItems: Array<{
-        product: IProduct
-        variation: IProductVariation
-        isFirst: boolean
-        totalStock: number
-    }>
-    handleSaveEdit: (product: IProduct, variationID?: string) => void
-    handleDeleteProduct: (product: IProduct) => void
+    currentItems: FlattenedItem[]
+    handleSaveEdit: (product: IRawProduct, variationID?: string) => void
+    handleDeleteProduct: (product: IRawProduct) => void
     adminStoreIDs: string[]
     categories: ICategory[]
 }
+
+type PricingVariationState = {
+    product: IRawProduct
+    variation: IProductVariationRaw
+} | null
 
 const calculateMarkup = (priceCost: number, priceList: number): string => {
     if (priceCost === 0) return "N/A"
@@ -45,40 +44,26 @@ const calculateMarkup = (priceCost: number, priceList: number): string => {
     return markup.toFixed(2)
 }
 
-const getCategoryFullNameFromProduct = (product: IProduct, categories: ICategory[]): string => {
-    const cat = product.Category
+const getCategoryFullNameFromProduct = (product: IRawProduct, categories: ICategory[]): string => {
+    const cat = product.category
     if (!cat) return "-"
     if (!cat.parentID) return cat.name
     const parent = categories.find((c) => c.categoryID === cat.parentID)
     return parent ? `${parent.name} / ${cat.name}` : cat.name
 }
 
-export function InventoryTable({ currentItems, handleSaveEdit, categories }: InventoryTableProps) {
+export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProduct, categories }: InventoryTableProps) {
     const { user } = useAuth()
     const { editingField, setEditingField, editValue, setEditValue } = inventoryStore()
+    const { storeSelected } = useTienda()
     const { searchParams } = useQueryParams()
-    const storeID = searchParams.get("storeID")
+    const storeID = searchParams.get("storeID") || storeSelected?.storeID || null
     const [openSku, setOpenSku] = useState<string | null>(null)
-    const router = useRouter()
-
+    const [pricingVariation, setPricingVariation] = useState<PricingVariationState>(null)
     const printBarcodeModal = (sku: string | null) => {
         setOpenSku(sku)
     }
     const isEditable = user?.role !== Role.Vendedor && user?.role !== Role.Tercero
-
-    const handleDeleteVariation = async (sku: string) => {
-        const confirm = window.confirm("Estás seguro de eliminar esta variación?")
-        if (confirm) {
-            const confirm2 = window.confirm("¡Esta acción no se puede deshacer!")
-            if (confirm2) {
-                await deleteVariation(sku)
-                toast.success("Eliminado exitosamente")
-                router.refresh()
-            }
-        } else {
-            toast.error("Operación cancelada")
-        }
-    }
 
     return (
         <div className="flex-1 flex flex-col">
@@ -117,23 +102,30 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                 <TableHead className="whitespace-nowrap text-center font-semibold text-gray-700 dark:text-gray-200">
                                     Stock agregado
                                 </TableHead>
+                                {user?.role === Role.Admin && (
+                                    <TableHead className="w-12 text-center font-semibold text-gray-700 dark:text-gray-200" />
+                                )}
                             </TableRow>
                         </TableHeader>
 
                         <TableBody>
                             {currentItems.map(({ product, variation, isFirst, totalStock }, index) => {
-                                const productData = getProductById([product], storeID!, variation.sku)
-                                // Stock agregado = suma de StoreProducts en sucursales (no admin)
-                                const storeFilter = variation.StoreProducts?.filter((sp) => !sp.Store.isAdminStore)
+                                const productData = findProductBySku([product], storeID!, variation.sku)
+                                const storeFilter = variation.storeProducts?.filter((sp) => !sp.store?.isCentralStore)
                                 const stockAgregado =
-                                    variation.StoreProducts?.reduce((sum: number, sp) => {
-                                        if (sp.storeID !== storeID) return sum + sp.quantity
+                                    variation.storeProducts?.reduce((sum: number, sp) => {
+                                        if (!sp.store?.isCentralStore) return sum + (sp.stock || 0)
                                         return sum
                                     }, 0) ?? 0
-                                const profitMargin =
-                                    variation.priceList > 0
-                                        ? ((variation.priceList - variation.priceCost) / variation.priceList) * 100
-                                        : 0
+
+                                const currentSp =
+                                    variation.storeProducts?.find((sp) => sp.storeID === storeID) ||
+                                    variation.storeProducts?.[0]
+                                const priceCost = currentSp?.priceCost || 0
+                                const priceList = currentSp?.priceList || 0
+                                const stockQuantity = currentSp?.stock || 0
+
+                                const profitMargin = priceList > 0 ? ((priceList - priceCost) / priceList) * 100 : 0
                                 return (
                                     <TableRow
                                         key={`${product.productID}-${variation.variationID}`}
@@ -146,14 +138,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                         {isFirst && (
                                             <TableCell
                                                 className="py-2 px-3 text-left w-1/4"
-                                                rowSpan={
-                                                    (
-                                                        currentItems.find(
-                                                            (i) =>
-                                                                i.product.productID === product.productID && i.isFirst,
-                                                        ) as any
-                                                    )?.rowSpan || product.ProductVariations.length
-                                                }
+                                                rowSpan={product.variations?.length || 1}
                                             >
                                                 <MotionItem key={`product-${product.productID}`} delay={index + 2}>
                                                     <div className="flex flex-col relative w-full items-center gap-4">
@@ -175,9 +160,14 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                             </p>
                                                             <div className="flex justify-center gap-2 mt-2">
                                                                 <span className="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full font-medium">
-                                                                    {product.ProductVariations.reduce(
-                                                                        (prev, variation) => {
-                                                                            return prev + variation.stockQuantity
+                                                                    {product.variations?.reduce(
+                                                                        (prev: number, v: IProductVariationRaw) => {
+                                                                            const vStock = v.storeProducts.reduce(
+                                                                                (acc: number, sp) =>
+                                                                                    acc + (sp.stock || 0),
+                                                                                0,
+                                                                            )
+                                                                            return prev + vStock
                                                                         },
                                                                         0,
                                                                     )}{" "}
@@ -269,7 +259,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 onClick={() => {
                                                     if (!isEditable) return
                                                     setEditingField({ sku: variation.sku, field: "priceCost" })
-                                                    setEditValue(String(variation.priceCost))
+                                                    setEditValue(String(priceCost))
                                                 }}
                                             >
                                                 {editingField?.sku === variation.sku &&
@@ -294,7 +284,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                     </div>
                                                 ) : (
                                                     <span className="font-semibold text-sm blur-sm hover:blur-0 transition-[filter] duration-300 ease-out">
-                                                        ${toPrice(variation.priceCost)}
+                                                        ${toPrice(priceCost)}
                                                     </span>
                                                 )}
                                             </TableCell>
@@ -310,7 +300,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                             onClick={() => {
                                                 if (!isEditable) return
                                                 setEditingField({ sku: variation.sku, field: "priceList" })
-                                                setEditValue(String(variation.priceList))
+                                                setEditValue(String(priceList))
                                             }}
                                         >
                                             {editingField?.sku === variation.sku &&
@@ -333,9 +323,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-1">
-                                                    <span className="font-semibold text-sm">
-                                                        ${toPrice(variation.priceList)}
-                                                    </span>
+                                                    <span className="font-semibold text-sm">${toPrice(priceList)}</span>
                                                     <span
                                                         className={`text-xs ${
                                                             profitMargin > 30
@@ -345,9 +333,28 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                                   : "text-red-600"
                                                         }`}
                                                     >
-                                                        Markup:{" "}
-                                                        {calculateMarkup(variation.priceCost, variation.priceList)}
+                                                        Markup: {calculateMarkup(priceCost, priceList)}
                                                     </span>
+                                                    {/* Botón Pricing - solo admins */}
+                                                    {user?.role === Role.Admin && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setPricingVariation({ product, variation })
+                                                                    }}
+                                                                    className="flex items-center gap-1 px-2 py-0.5 mt-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                                                >
+                                                                    <Tag className="w-3 h-3" />
+                                                                    Pricing
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Ver historial, ofertas y precio final
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
                                                 </div>
                                             )}
                                         </TableCell>
@@ -362,7 +369,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                             onClick={() => {
                                                 if (!isEditable) return
                                                 setEditingField({ sku: variation.sku, field: "sizeNumber" })
-                                                setEditValue(variation.sizeNumber)
+                                                setEditValue(variation.size)
                                             }}
                                         >
                                             {editingField?.sku === variation.sku &&
@@ -385,7 +392,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                         key={`${product.productID}-${variation.variationID}`}
                                                         delay={index + 3}
                                                     >
-                                                        <span className="font-medium">{variation.sizeNumber}</span>
+                                                        <span className="font-medium">{variation.size}</span>
                                                     </MotionItem>
                                                 </div>
                                             )}
@@ -401,7 +408,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                             onClick={() => {
                                                 if (!isEditable) return
                                                 setEditingField({ sku: variation.sku, field: "stockQuantity" })
-                                                setEditValue(String(variation.stockQuantity))
+                                                setEditValue(String(stockQuantity))
                                             }}
                                         >
                                             {editingField?.sku === variation.sku &&
@@ -424,12 +431,10 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </div>
                                             ) : (
                                                 <Badge
-                                                    variant={variation.stockQuantity <= 9 ? "destructive" : "default"}
+                                                    variant={stockQuantity <= 9 ? "destructive" : "default"}
                                                     className="font-bold text-sm"
                                                 >
-                                                    {user?.role === Role.Admin
-                                                        ? productData?.stockQuantity
-                                                        : productData?.quantity}
+                                                    {stockQuantity}
                                                 </Badge>
                                             )}
                                         </TableCell>
@@ -443,25 +448,44 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     {storeFilter && storeFilter.length > 0 ? (
-                                                        storeFilter.map((sp) => (
-                                                            <p key={sp.storeID}>
-                                                                {sp.Store.name}: {sp.quantity}
-                                                            </p>
-                                                        ))
+                                                        <div className="space-y-1 text-left">
+                                                            {storeFilter.map((sp) => (
+                                                                <p
+                                                                    key={`${sp.storeProductID}-${sp.storeID}`}
+                                                                    className="whitespace-nowrap"
+                                                                >
+                                                                    {sp.store?.name || sp.Store?.name}: {sp.stock || 0}
+                                                                </p>
+                                                            ))}
+                                                        </div>
                                                     ) : (
                                                         <p>No hay stock en ninguna tienda</p>
                                                     )}
                                                 </TooltipContent>
                                             </Tooltip>
-
-                                            <div
-                                                title="Eliminar talla"
-                                                className="hidden group-hover:block absolute right-0 top-1/2 -translate-y-1/2"
-                                                onClick={() => handleDeleteVariation(variation.sku)}
-                                            >
-                                                <Trash2 />
-                                            </div>
                                         </TableCell>
+                                        {user?.role === Role.Admin && isFirst && (
+                                            <TableCell
+                                                className="text-center py-2"
+                                                rowSpan={product.variations?.length || 1}
+                                            >
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleDeleteProduct(product)
+                                                            }}
+                                                            className="p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Eliminar producto</TooltipContent>
+                                                </Tooltip>
+                                            </TableCell>
+                                        )}
+                                        {user?.role === Role.Admin && !isFirst && <TableCell />}
                                     </TableRow>
                                 )
                             })}
@@ -469,6 +493,37 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                     </Table>
                 </div>
             </div>
+            {/* Modal de Pricing */}
+            <PricingModalWrapper
+                pricingVariation={pricingVariation}
+                setPricingVariation={setPricingVariation}
+                storeID={storeID}
+            />
         </div>
+    )
+}
+
+// ── Renderizar PricingModal fuera del loop de tablas ───────────────────────────
+function PricingModalWrapper({
+    pricingVariation,
+    setPricingVariation,
+    storeID,
+}: {
+    pricingVariation: PricingVariationState
+    setPricingVariation: Dispatch<SetStateAction<PricingVariationState>>
+    storeID: string | null
+}) {
+    if (!pricingVariation || !storeID) return null
+    const { product, variation } = pricingVariation
+    const storeProduct = variation.storeProducts?.find((sp) => sp.storeID === storeID)
+    return (
+        <PricingModal
+            isOpen
+            onClose={() => setPricingVariation(null)}
+            product={product as unknown as IProduct}
+            variation={variation as unknown as IProductVariation}
+            storeProduct={storeProduct as unknown as IStoreProduct}
+            storeID={storeID}
+        />
     )
 }
