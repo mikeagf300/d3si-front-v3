@@ -1,6 +1,6 @@
 "use client"
 
-import { Tag } from "lucide-react"
+import { Tag, Trash2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -52,7 +52,7 @@ const getCategoryFullNameFromProduct = (product: IRawProduct, categories: ICateg
     return parent ? `${parent.name} / ${cat.name}` : cat.name
 }
 
-export function InventoryTable({ currentItems, handleSaveEdit, categories }: InventoryTableProps) {
+export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProduct, categories }: InventoryTableProps) {
     const { user } = useAuth()
     const { editingField, setEditingField, editValue, setEditValue } = inventoryStore()
     const { storeSelected } = useTienda()
@@ -102,6 +102,9 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                 <TableHead className="whitespace-nowrap text-center font-semibold text-gray-700 dark:text-gray-200">
                                     Stock agregado
                                 </TableHead>
+                                {user?.role === Role.Admin && (
+                                    <TableHead className="w-12 text-center font-semibold text-gray-700 dark:text-gray-200" />
+                                )}
                             </TableRow>
                         </TableHeader>
 
@@ -461,6 +464,28 @@ export function InventoryTable({ currentItems, handleSaveEdit, categories }: Inv
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TableCell>
+                                        {user?.role === Role.Admin && isFirst && (
+                                            <TableCell
+                                                className="text-center py-2"
+                                                rowSpan={product.variations?.length || 1}
+                                            >
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleDeleteProduct(product)
+                                                            }}
+                                                            className="p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Eliminar producto</TooltipContent>
+                                                </Tooltip>
+                                            </TableCell>
+                                        )}
+                                        {user?.role === Role.Admin && !isFirst && <TableCell />}
                                     </TableRow>
                                 )
                             })}

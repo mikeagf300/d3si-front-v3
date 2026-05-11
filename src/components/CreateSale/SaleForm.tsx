@@ -11,6 +11,7 @@ import { toPrice } from "@/utils/priceFormat"
 import { Button } from "../ui/button"
 import { useTienda } from "@/stores/tienda.store"
 import { createNewSale } from "@/actions/sales/postSale"
+import { updateSaleStatus } from "@/actions/sales/updateSaleStatus"
 import { toast } from "sonner"
 import { DiscountModal, DiscountStoreProductOption } from "@/components/Discounts/DiscountModal"
 import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
@@ -27,7 +28,8 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
     const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
 
     const urlStoreID = searchParams.get("storeID")
-    const effectiveStoreID = storeSelected?.storeID ?? (urlStoreID && !isSpecialStoreFilter(urlStoreID) ? urlStoreID : "")
+    const effectiveStoreID =
+        storeSelected?.storeID ?? (urlStoreID && !isSpecialStoreFilter(urlStoreID) ? urlStoreID : "")
     const total = useMemo(() => {
         return cartItems.reduce((acc, item) => {
             const price = item.finalPrice ?? item.priceList
@@ -97,11 +99,16 @@ export const SaleForm = ({ initialProducts }: { initialProducts: IProduct[] }) =
 
             const res = await createNewSale(toSubmitSale)
             if (res) {
+                if (res.saleID) {
+                    await updateSaleStatus(res.saleID, { status: "Pagado" })
+                }
                 toast.success("Venta generada exitosamente! Redirigiendo...")
                 actions.clearCart()
                 router.refresh()
                 router.push(
-                    res.saleID ? `/home/${res.saleID}?storeID=${effectiveStoreID}` : `/home?storeID=${effectiveStoreID}`,
+                    res.saleID
+                        ? `/home/${res.saleID}?storeID=${effectiveStoreID}`
+                        : `/home?storeID=${effectiveStoreID}`,
                 )
             }
         } catch (error) {
