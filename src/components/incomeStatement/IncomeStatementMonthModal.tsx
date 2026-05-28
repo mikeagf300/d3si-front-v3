@@ -39,7 +39,7 @@ export default function IncomeStatementMonthModal({ month, open, onOpenChange }:
                             {month ? `${month.label} ${month.year}` : "Detalle mensual"}
                         </DialogTitle>
                         <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
-                            Desglose del mes seleccionado por ventas, purchase orders, gastos y neto.
+                            Desglose del mes seleccionado por ventas, órdenes de compra, gastos y neto.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
@@ -48,27 +48,33 @@ export default function IncomeStatementMonthModal({ month, open, onOpenChange }:
                     <div className="max-h-[80vh] overflow-y-auto px-6 py-5">
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                             <Card className="border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-                                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Ventas</p>
+                                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                                    Ventas
+                                </p>
                                 <p className="mt-2 text-xl font-semibold text-cyan-700 dark:text-cyan-300">
                                     {formatCurrency(month.salesIncome)}
                                 </p>
                             </Card>
                             <Card className="border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                                 <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                                    Purchase Orders
+                                    Órdenes de Compra
                                 </p>
                                 <p className="mt-2 text-xl font-semibold text-violet-700 dark:text-violet-300">
                                     {formatCurrency(month.purchaseOrdersIncome)}
                                 </p>
                             </Card>
                             <Card className="border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-                                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Gastos</p>
+                                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                                    Gastos
+                                </p>
                                 <p className="mt-2 text-xl font-semibold text-rose-700 dark:text-rose-300">
                                     {formatCurrency(month.expenses)}
                                 </p>
                             </Card>
                             <Card className="border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-                                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Neto</p>
+                                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                                    Neto
+                                </p>
                                 <p
                                     className={`mt-2 text-xl font-semibold ${
                                         month.net >= 0
@@ -91,7 +97,10 @@ export default function IncomeStatementMonthModal({ month, open, onOpenChange }:
                                         Totales agrupados por tipo de gasto.
                                     </p>
                                 </div>
-                                <Badge variant="outline" className="border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                                <Badge
+                                    variant="outline"
+                                    className="border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300"
+                                >
                                     {details.length} tipo{details.length === 1 ? "" : "s"}
                                 </Badge>
                             </div>
@@ -128,18 +137,18 @@ export default function IncomeStatementMonthModal({ month, open, onOpenChange }:
                                         {details
                                             .filter((detail) => !expenseTypeOrder.includes(detail.type))
                                             .map((detail) => (
-                                            <div
-                                                key={detail.type}
-                                                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60"
-                                            >
-                                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                    {detail.type}
-                                                </span>
-                                                <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                                                    {formatCurrency(detail.total)}
-                                                </span>
-                                            </div>
-                                        ))}
+                                                <div
+                                                    key={detail.type}
+                                                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60"
+                                                >
+                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                        {detail.type}
+                                                    </span>
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                                                        {formatCurrency(detail.total)}
+                                                    </span>
+                                                </div>
+                                            ))}
                                     </>
                                 )}
                             </div>
