@@ -14,9 +14,11 @@ import { updateUser } from "@/actions/users/updateUser"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { addUserStore } from "@/actions/stores/addUserStore"
 import { removeUserFromStore } from "@/actions/stores/removeUserFromStore"
+import { updateUserStoreRole } from "@/actions/userstores/updateUserStoreRole"
 import Modal from "./ModalGestion"
 import { User, Store, Plus, Trash2, Save, X } from "lucide-react"
 import { useAuth } from "@/stores/user.store"
+import type { UserRole } from "@/lib/userRoles"
 
 interface GestionUserFormProps {
     isOpen: boolean
@@ -25,7 +27,7 @@ interface GestionUserFormProps {
 }
 
 export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUserFormProps) {
-    const { stores, setStores } = useTienda()
+    const { stores } = useTienda()
     const { setUsers } = useAuth()
 
     // Estados para los campos del formulario
@@ -36,7 +38,9 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
             .filter((store): store is NonNullable<typeof store> => Boolean(store)),
     )
     const [selectedStoreId, setselectedStoreId] = useState<string>("")
+    const [selectedRole, setSelectedRole] = useState<Exclude<UserRole, "admin">>("store_manager")
     const [isLoading, setIsLoading] = useState(false)
+    const contextualRoles: Exclude<UserRole, "admin">[] = ["owner", "store_manager", "consignado", "tercero"]
 
     // Filtrar tiendas disponibles (que no estén ya asignadas)
     const tiendDisponibles = stores.filter(
@@ -76,10 +80,23 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
             setTiendasAsignadas((prev) => [...prev, tienda])
             // Aquí llamamos la función async para agregar el store al user
             try {
-                await addUserStore(usuario.userID.trim(), selectedStoreId.trim())
+                await addUserStore(usuario.userID.trim(), selectedStoreId.trim(), selectedRole)
             } catch (error) {
                 setTiendasAsignadas((prev) => prev.filter((t) => t.storeID !== selectedStoreId))
             }
+        }
+    }
+
+    const handleCambiarRolTienda = async (storeId: string, role: Exclude<UserRole, "admin">) => {
+        const relation = usuario.userStores?.find((userStore) => userStore.store?.storeID === storeId)
+        if (!relation?.userStoreID) return toast.error("No se encontró la asignación usuario-tienda")
+
+        try {
+            await updateUserStoreRole(relation.userStoreID, role)
+            toast.success("Rol contextual actualizado")
+        } catch (error) {
+            console.error(error)
+            toast.error("Error al cambiar el rol contextual")
         }
     }
 
@@ -147,7 +164,7 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
                     </div>
 
                     {/* Agregar nueva tienda */}
-                    <div className="flex space-x-3">
+                    <div className="flex flex-col md:flex-row gap-3">
                         <Select
                             value={selectedStoreId}
                             onValueChange={(value) => setselectedStoreId(value)}
@@ -175,6 +192,18 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
                                 ))}
                             </SelectContent>
                         </Select>
+                        <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as Exclude<UserRole, "admin">)}>
+                            <SelectTrigger className="w-44 px-3 py-2 border border-gray-300 dark:bg-slate-800 rounded-md text-sm">
+                                <SelectValue placeholder="Rol" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-slate-800">
+                                {contextualRoles.map((role) => (
+                                    <SelectItem key={role} value={role}>
+                                        {role}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <Button
                             type="button"
                             onClick={handleAgregarTienda}
@@ -191,33 +220,57 @@ export default function GestionUserForm({ isOpen, onClose, usuario }: GestionUse
                         {tiendAsignadas.length === 0 ? (
                             <div className="text-center py-8 text-gray-500">No hay tiendas asignadas</div>
                         ) : (
-                            tiendAsignadas.map((store, index) => (
-                                <motion.div
-                                    key={store.storeID}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className="flex items-center justify-between p-3 dark:bg-slate-700  bg-blue-50 border border-blue-200 rounded-md"
-                                >
-                                    <div className="flex items-center space-x-3">
-                                        <Store className="w-4 h-4 text-blue-600" />
-                                        <div>
-                                            <span className="font-medium dark:text-white text-gray-900">
-                                                {store.name}
-                                            </span>
-                                            <span className="text-sm text-gray-500 ml-2">({store.city})</span>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        onClick={() => handleEliminarTienda(store.storeID)}
-                                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md"
+                            tiendAsignadas.map((store, index) => {
+                                const relation = usuario.userStores?.find(
+                                    (userStore) => userStore.store?.storeID === store.storeID,
+                                )
+                                return (
+                                    <motion.div
+                                        key={store.storeID}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 dark:bg-slate-700 bg-blue-50 border border-blue-200 rounded-md"
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </motion.div>
-                            ))
+                                        <div className="flex items-center space-x-3">
+                                            <Store className="w-4 h-4 text-blue-600" />
+                                            <div>
+                                                <span className="font-medium dark:text-white text-gray-900">
+                                                    {store.name}
+                                                </span>
+                                                <span className="text-sm text-gray-500 ml-2">({store.city})</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Select
+                                                defaultValue={(relation?.role as Exclude<UserRole, "admin">) ?? "store_manager"}
+                                                onValueChange={(value) =>
+                                                    handleCambiarRolTienda(store.storeID, value as Exclude<UserRole, "admin">)
+                                                }
+                                            >
+                                                <SelectTrigger className="w-44 bg-white dark:bg-slate-800">
+                                                    <SelectValue placeholder="Rol" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white dark:bg-slate-800">
+                                                    {contextualRoles.map((role) => (
+                                                        <SelectItem key={role} value={role}>
+                                                            {role}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                type="button"
+                                                onClick={() => handleEliminarTienda(store.storeID)}
+                                                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                )
+                            })
                         )}
                     </div>
                 </div>

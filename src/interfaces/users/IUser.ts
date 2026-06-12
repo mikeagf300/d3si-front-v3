@@ -7,6 +7,7 @@ export interface IUser {
     name: string
     email: string
     role: UserRole
+    roles?: string
     password: string
     userImg: string | null
     createdAt: string

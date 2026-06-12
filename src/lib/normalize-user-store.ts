@@ -5,6 +5,7 @@ import { pickArray, pickFirst } from "./normalize-helpers"
 
 type RawRelation = {
     userStoreID?: string
+    role?: IUserStoreRelation["role"]
     createdAt?: string
     updatedAt?: string
     user?: IUser | null
@@ -19,6 +20,7 @@ type RawUser = {
     name?: string
     email?: string
     role?: IUser["role"]
+    roles?: IUser["roles"]
     password?: string
     userImg?: string | null
     createdAt?: string
@@ -55,6 +57,7 @@ const normalizeRelation = (relation: RawRelation): IUserStoreRelation => ({
     updatedAt: relation.updatedAt ?? "",
     user: pickFirst(relation.user, relation.User) ?? null,
     store: pickFirst(relation.store, relation.Store) ?? null,
+    role: relation.role,
 })
 
 export const normalizeUser = (raw: RawUser): IUser => {
@@ -66,6 +69,7 @@ export const normalizeUser = (raw: RawUser): IUser => {
         name: raw.name ?? "",
         email: raw.email ?? "",
         role: raw.role ?? "admin",
+        roles: raw.roles,
         password: raw.password ?? "",
         userImg: raw.userImg ?? null,
         createdAt: raw.createdAt ?? "",

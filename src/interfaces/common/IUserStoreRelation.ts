@@ -5,6 +5,7 @@ export interface IUserStoreRelation {
     userStoreID: string
     user?: IUser | null
     store?: IStore | null
+    role?: string
     createdAt: string
     updatedAt: string
 }

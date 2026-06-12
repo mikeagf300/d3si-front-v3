@@ -12,7 +12,10 @@ import { FaBars, FaMoon, FaSun, FaTimes } from "react-icons/fa"
 import { motion } from "framer-motion"
 import { MotionItem } from "../Animations/motionItem"
 import { useAuth } from "@/stores/user.store"
-import { Role } from "@/lib/userRoles"
+import { Role, isSuperAdmin } from "@/lib/userRoles"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getAllStores } from "@/actions/stores/getAllStores"
+import { getUserStores } from "@/actions/users/getUserStores"
 
 import useMobileScreen from "@/hooks/useMobileScreen"
 import useDarkMode from "@/hooks/useDarkMode"
@@ -24,20 +27,82 @@ export default function Sidebar() {
     const { searchParams, createQueryParam } = useQueryParams()
 
     const { user } = useAuth()
-    const { storeSelected } = useTienda()
+    const { storesFromUser, storeSelected, setStores, setStoresUser, setStoreSelected } = useTienda()
 
     const { isMobile, isMobileOpen, setIsMobileOpen } = useMobileScreen()
     const { isDarkMode, setIsDarkMode } = useDarkMode()
 
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
+    const loadedStoresFor = React.useRef<string | null>(null)
+    const isAdmin = isSuperAdmin(user)
 
     useEffect(() => {
         const storeID = searchParams.get("storeID")
         if (!storeID) {
             if (storeSelected) router.push(`${pathname}?${createQueryParam("storeID", storeSelected.storeID)}`)
+            return
         }
-    }, [pathname, storeSelected])
+        const storeFromUrl = storesFromUser.find((store) => store.storeID === storeID)
+        if (storeFromUrl && storeFromUrl.storeID !== storeSelected?.storeID) {
+            setStoreSelected(storeFromUrl)
+        }
+    }, [createQueryParam, pathname, router, searchParams, setStoreSelected, storeSelected, storesFromUser])
+
+    useEffect(() => {
+        if (!user?.userID) return
+
+        const loadKey = `${user.userID}:${isAdmin ? "admin" : "user"}`
+        if (loadedStoresFor.current === loadKey) return
+        loadedStoresFor.current = loadKey
+
+        const loadStores = async () => {
+            const stores = isAdmin ? await getAllStores() : await getUserStores(user.userID)
+            setStores(stores)
+            setStoresUser(stores)
+
+            const storeID = searchParams.get("storeID")
+            const currentStore =
+                stores.find((store) => store.storeID === storeID) ??
+                stores.find((store) => store.storeID === storeSelected?.storeID) ??
+                stores[0] ??
+                null
+
+            if (!currentStore) {
+                setStoreSelected(null)
+                return
+            }
+
+            setStoreSelected(currentStore)
+
+            if (storeID !== currentStore.storeID) {
+                router.replace(`${pathname}?${createQueryParam("storeID", currentStore.storeID)}`)
+            }
+        }
+
+        loadStores().catch((error) => {
+            loadedStoresFor.current = null
+            console.error("Error loading sidebar stores:", error)
+        })
+    }, [
+        createQueryParam,
+        isAdmin,
+        pathname,
+        router,
+        searchParams,
+        setStoreSelected,
+        setStores,
+        setStoresUser,
+        storeSelected?.storeID,
+        user?.userID,
+    ])
+
+    const handleStoreChange = (storeID: string) => {
+        const selected = storesFromUser.find((store) => store.storeID === storeID)
+        if (!selected) return
+        setStoreSelected(selected)
+        router.push(`${pathname}?${createQueryParam("storeID", selected.storeID)}`)
+    }
 
     const toggleSection = (sectionId: string) => {
         setOpenSections((prev) => ({
@@ -176,6 +241,26 @@ export default function Sidebar() {
                             </div>
 
                             {/* Navigation */}
+                            {!shouldShowCollapsed && storesFromUser.length > 0 && (
+                                <div className="px-3 pb-3">
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                        Tienda activa
+                                    </p>
+                                    <Select value={storeSelected?.storeID ?? ""} onValueChange={handleStoreChange}>
+                                        <SelectTrigger className="h-10 bg-white/80 dark:bg-gray-800 border-slate-300 dark:border-gray-700 text-gray-700 dark:text-gray-200">
+                                            <SelectValue placeholder="Seleccionar tienda" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white dark:bg-gray-800">
+                                            {storesFromUser.map((store) => (
+                                                <SelectItem key={store.storeID} value={store.storeID}>
+                                                    {store.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
                             <nav className="flex-1 px-0 py-2 lg:py-4 space-y-1 overflow-y-auto overflow-x-hidden">
                                 {filteredNavItems.map((item, index) => {
                                     const sectionId = item.label.toLowerCase().replace(/\s+/g, "")

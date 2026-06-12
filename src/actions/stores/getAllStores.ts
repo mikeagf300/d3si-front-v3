@@ -1,3 +1,5 @@
+"use server"
+
 import { IStore } from "@/interfaces/stores/IStore"
 import { API_URL } from "@/lib/enviroments"
 import { fetcher } from "@/lib/fetcher"

@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "../ui/button"
 import { login } from "@/actions/auth/authActions"
 import { getUserStores } from "@/actions/users/getUserStores"
+import { getAllStores } from "@/actions/stores/getAllStores"
 import { useAuth } from "@/stores/user.store"
 import { toast } from "sonner"
 import { useTienda } from "@/stores/tienda.store"
-import { Role } from "@/lib/userRoles"
+import { Role, isSuperAdmin } from "@/lib/userRoles"
 import useDarkMode from "@/hooks/useDarkMode"
 import { Switch } from "../ui/switch"
 import { Input } from "../ui/input"
@@ -18,7 +19,7 @@ export default function LoginForm() {
     const [password, setPassword] = useState("")
     const router = useRouter()
     const { setUser } = useAuth()
-    const { setStoreSelected, setStoresUser } = useTienda()
+    const { setStores, setStoreSelected, setStoresUser } = useTienda()
     const [isLoading, setLoading] = useState(false)
     const { isDarkMode, setIsDarkMode } = useDarkMode()
     const handleSubmit = async (e: React.FormEvent) => {
@@ -33,9 +34,10 @@ export default function LoginForm() {
             }
 
             setUser(data.user, data.accessToken)
-            const userStores = await getUserStores(data.user.userID)
+            const userStores = isSuperAdmin(data.user) ? await getAllStores() : await getUserStores(data.user.userID)
             const resolvedStoresFromUser = userStores
 
+            setStores(resolvedStoresFromUser)
             setStoresUser(resolvedStoresFromUser)
 
             if (resolvedStoresFromUser.length > 0) {
@@ -49,7 +51,8 @@ export default function LoginForm() {
                 router.push(`/home?storeID=${storeID}`)
             } else {
                 toast.success("Inicio de sesión exitoso, verificando tiendas...")
-                router.push(`/home?storeID=all`)
+                setStoreSelected(null)
+                router.push("/home")
             }
         } catch (err) {
             console.error(err)

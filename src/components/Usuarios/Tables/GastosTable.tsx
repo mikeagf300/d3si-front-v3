@@ -11,6 +11,7 @@ import { getAllExpenses } from "@/actions/expenses/getAllExpenses"
 import { deleteExpense } from "@/actions/expenses/deleteExpense"
 import { IExpense, ExpenseType } from "@/interfaces/expenses/IExpense"
 import { toast } from "sonner"
+import { useTienda } from "@/stores/tienda.store"
 
 // Mapeo tipo API → etiqueta en español
 const TIPO_LABEL: Record<ExpenseType, string> = {
@@ -39,13 +40,14 @@ export default function GastosTable() {
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const { storeSelected } = useTienda()
     const router = useRouter()
 
     // Cargar gastos del backend al montar
     useEffect(() => {
         const fetchGastos = async () => {
             try {
-                const data = await getAllExpenses()
+                const data = await getAllExpenses(storeSelected?.storeID)
                 setGastos(data)
             } catch (error) {
                 console.error(error)
@@ -55,7 +57,7 @@ export default function GastosTable() {
             }
         }
         fetchGastos()
-    }, [])
+    }, [storeSelected?.storeID])
 
     const gastosFiltrados = gastos.filter(
         (gasto) =>
@@ -111,7 +113,11 @@ export default function GastosTable() {
                 <div className="flex justify-end p-4">
                     <Button
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2"
-                        onClick={() => router.push("/home/incomeStatement")}
+                        onClick={() =>
+                            router.push(
+                                `/home/incomeStatement${storeSelected?.storeID ? `?storeID=${storeSelected.storeID}` : ""}`,
+                            )
+                        }
                     >
                         <span>Ir al estado de resultados</span>
                     </Button>

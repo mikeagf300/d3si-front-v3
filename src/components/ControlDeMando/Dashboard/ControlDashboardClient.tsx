@@ -240,7 +240,7 @@ export default function ControlDashboardClient() {
 
             const [resumeData, salesData, productsData, categoriesData, metaData, wooOrdersData] = await Promise.all([
                 getResume(storeSelected.storeID, todayStr),
-                getSales(), // Sin filtro de tienda para análisis multi-canal
+                getSales(storeSelected.storeID),
                 getAllProducts(),
                 getAllCategories(),
                 getMetaMensual(storeSelected.storeID),
