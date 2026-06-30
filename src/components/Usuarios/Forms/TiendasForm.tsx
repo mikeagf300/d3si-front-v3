@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { getAllStores } from "@/actions/stores/getAllStores"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { useAuth } from "@/stores/user.store"
-import { Role } from "@/lib/userRoles"
+import { STORE_TYPE_OPTIONS, StoreType } from "@/lib/storeTypes"
 
 export default function TiendasForm() {
     const { users } = useAuth()
@@ -37,7 +37,7 @@ export default function TiendasForm() {
         }
 
         try {
-            const isCentralStore = tipoTienda === Role.Admin
+            const isCentralStore = tipoTienda === StoreType.Central
 
             await createStore({
                 name: nombre,
@@ -47,8 +47,8 @@ export default function TiendasForm() {
                 address: direccion,
                 city: ciudad,
                 email: email,
-                role: tipoTienda,
-                isAdminStore: isCentralStore,
+                type: tipoTienda,
+                isCentralStore,
             })
 
             const allStores = await getAllStores()
@@ -246,10 +246,11 @@ export default function TiendasForm() {
                                 <SelectValue placeholder="Selecciona tipo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={Role.Admin}>Admin</SelectItem>
-                                <SelectItem value={Role.Vendedor}>Store Manager</SelectItem>
-                                <SelectItem value={Role.Consignado}>Consignado</SelectItem>
-                                <SelectItem value={Role.Tercero}>Tercero</SelectItem>
+                                {STORE_TYPE_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

@@ -135,22 +135,22 @@ export default function Sidebar() {
                             {/* Header */}
                             <div className="flex justify-between items-center p-3 lg:p-4">
                                 {!shouldShowCollapsed && (
-                                    <div className="relative w-[160px] lg:w-[200px] h-[80px] lg:h-[120px]">
+                                    <div className="relative h-[106px] w-[160px] lg:h-[126px] lg:w-[190px]">
                                         <Image
-                                            src="/brand/two-brands-color.png"
-                                            alt="Logo Light"
+                                            src="/brand/betty.claro.transparent.png"
+                                            alt="BETTY Software Retail"
                                             fill
                                             priority
-                                            sizes="(max-width: 1024px) 160px, 200px"
-                                            className="block dark:hidden object-contain"
+                                            sizes="(max-width: 1024px) 160px, 190px"
+                                            className="block object-cover dark:hidden"
                                         />
                                         <Image
-                                            src="/brand/two-brands.png"
-                                            alt="Logo Dark"
+                                            src="/brand/betty.dark.transparent2.png"
+                                            alt="BETTY Software Retail"
                                             fill
                                             priority
-                                            sizes="(max-width: 1024px) 160px, 200px"
-                                            className="hidden dark:block object-contain"
+                                            sizes="(max-width: 1024px) 160px, 190px"
+                                            className="hidden object-cover dark:block"
                                         />
                                     </div>
                                 )}
@@ -335,7 +335,7 @@ export default function Sidebar() {
                                 {!shouldShowCollapsed && (
                                     <Switch
                                         checked={!!isDarkMode}
-                                        onCheckedChange={() => setIsDarkMode(!isDarkMode)}
+                                        onCheckedChange={setIsDarkMode}
                                         className="bg-gray-300 data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-900 flex-shrink-0"
                                     />
                                 )}

@@ -35,8 +35,9 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
                     const usuarios = await getAllUsers()
                     setUsers(usuarios)
                 } else if (view === "stores") {
-                    const tiendas = await getAllStores()
+                    const [tiendas, usuarios] = await Promise.all([getAllStores(), getAllUsers()])
                     setStores(tiendas)
+                    setUsers(usuarios)
                 }
             } catch (error) {
                 console.error("Error loading data:", error)
@@ -79,22 +80,22 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
                 <p className="text-gray-600">Selecciona qué quieres gestionar para ver el listado correspondiente</p>
             </div>
 
-            <div className="flex lg:flex-row flex-col justify-center gap-0">
+            <div className="flex flex-col justify-center gap-2 sm:flex-row sm:flex-wrap">
                 <Button
                     onClick={() => handleViewChange("users")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-l-md lg:rounded-r-none font-medium"
+                    className="w-full bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 sm:w-auto"
                 >
                     Gestionar Usuarios
                 </Button>
                 <Button
                     onClick={() => handleViewChange("stores")}
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 lg:rounded-none lg:mt-0 mt-2 font-medium"
+                    className="w-full bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700 sm:w-auto"
                 >
                     Gestionar Tiendas
                 </Button>
                 <Button
                     onClick={() => handleViewChange("gastos")}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-r-md lg:rounded-l-none lg:mt-0 mt-2 font-medium"
+                    className="w-full bg-purple-600 px-6 py-3 font-medium text-white hover:bg-purple-700 sm:w-auto"
                 >
                     Gestionar Gastos
                 </Button>
@@ -115,10 +116,10 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
 
         return (
             <div>
-                <div className="flex lg:flex-row flex-col justify-start lg:ml-8 gap-0 mb-6">
+                <div className="mb-6 flex flex-col justify-start gap-2 sm:flex-row sm:flex-wrap lg:ml-8">
                     <Button
                         onClick={() => handleViewChange("users")}
-                        className={`px-6 py-3 rounded-l-md lg:rounded-r-none font-medium ${
+                        className={`w-full px-6 py-3 font-medium sm:w-auto ${
                             currentView === "users"
                                 ? "bg-blue-600 text-white hover:bg-blue-800"
                                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -128,7 +129,7 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
                     </Button>
                     <Button
                         onClick={() => handleViewChange("stores")}
-                        className={`px-6 py-3 lg:rounded-none lg:mt-0 mt-2 font-medium ${
+                        className={`w-full px-6 py-3 font-medium sm:w-auto ${
                             currentView === "stores"
                                 ? "bg-green-600 text-white hover:bg-green-800"
                                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -138,7 +139,7 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
                     </Button>
                     <Button
                         onClick={() => handleViewChange("gastos")}
-                        className={`px-6 py-3 rounded-r-md lg:rounded-l-none lg:mt-0 mt-2 font-medium ${
+                        className={`w-full px-6 py-3 font-medium sm:w-auto ${
                             currentView === "gastos"
                                 ? "bg-purple-600 text-white hover:bg-purple-800"
                                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
