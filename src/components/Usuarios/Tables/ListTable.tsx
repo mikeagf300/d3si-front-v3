@@ -35,8 +35,9 @@ export default function ListTable({ defaultView = "initial", onViewChange }: Lis
                     const usuarios = await getAllUsers()
                     setUsers(usuarios)
                 } else if (view === "stores") {
-                    const tiendas = await getAllStores()
+                    const [tiendas, usuarios] = await Promise.all([getAllStores(), getAllUsers()])
                     setStores(tiendas)
+                    setUsers(usuarios)
                 }
             } catch (error) {
                 console.error("Error loading data:", error)
