@@ -23,6 +23,7 @@ import { IProductVariation } from "@/interfaces/products/IProductVariation"
 import type { FlattenedItem } from "@/interfaces/products/IFlatternProduct"
 import type { IProduct } from "@/interfaces/products/IProduct"
 import type { IStoreProduct } from "@/interfaces/products/IProductVariation"
+import type { IUpdatePriceResponse } from "@/interfaces/pricing/IPricing"
 import { PricingModal } from "./PricingModal"
 
 interface InventoryTableProps {
@@ -549,6 +550,59 @@ function PricingModalWrapper({
     if (!pricingVariation || !storeID) return null
     const { product, variation } = pricingVariation
     const storeProduct = variation.storeProducts?.find((sp) => sp.storeID === storeID)
+
+    const handlePriceUpdated = ({ storeProduct: updatedStoreProduct }: IUpdatePriceResponse) => {
+        const applyUpdatedStoreProduct = (storeProducts: IProductVariationRaw["storeProducts"] = []) =>
+            storeProducts.map((sp) =>
+                sp.storeProductID === updatedStoreProduct.storeProductID
+                    ? {
+                          ...sp,
+                          stock: updatedStoreProduct.stock,
+                          priceCost: updatedStoreProduct.priceCost,
+                          priceList: updatedStoreProduct.priceList,
+                          updatedAt: updatedStoreProduct.updatedAt,
+                      }
+                    : sp,
+            )
+
+        const { rawProducts, setRawProducts } = inventoryStore.getState()
+        const inventoryProducts = rawProducts as IRawProduct[]
+
+        setRawProducts(
+            inventoryProducts.map((rawProduct: IRawProduct) =>
+                rawProduct.productID === product.productID
+                    ? {
+                          ...rawProduct,
+                          variations: rawProduct.variations.map((rawVariation: IProductVariationRaw) => {
+                              if (rawVariation.variationID !== variation.variationID) return rawVariation
+
+                              const storeProducts = applyUpdatedStoreProduct(rawVariation.storeProducts)
+                              return {
+                                  ...rawVariation,
+                                  storeProducts,
+                                  StoreProducts: storeProducts,
+                              }
+                          }),
+                      }
+                    : rawProduct,
+            ),
+        )
+
+        setPricingVariation((current) => {
+            if (!current || current.variation.variationID !== variation.variationID) return current
+
+            const storeProducts = applyUpdatedStoreProduct(current.variation.storeProducts)
+            return {
+                ...current,
+                variation: {
+                    ...current.variation,
+                    storeProducts,
+                    StoreProducts: storeProducts,
+                },
+            }
+        })
+    }
+
     return (
         <PricingModal
             isOpen
@@ -557,6 +611,7 @@ function PricingModalWrapper({
             variation={variation as unknown as IProductVariation}
             storeProduct={storeProduct as unknown as IStoreProduct}
             storeID={storeID}
+            onPriceUpdated={handlePriceUpdated}
         />
     )
 }

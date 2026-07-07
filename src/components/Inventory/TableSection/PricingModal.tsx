@@ -20,12 +20,19 @@ import {
 } from "lucide-react"
 import { IProductVariation, IStoreProduct } from "@/interfaces/products/IProductVariation"
 import { IProduct } from "@/interfaces/products/IProduct"
-import { IPriceHistoryItem, IPriceCheck, DiscountType } from "@/interfaces/pricing/IPricing"
+import {
+    IPriceHistoryItem,
+    IPriceCheck,
+    DiscountType,
+    PriceType,
+    IUpdatePriceResponse,
+} from "@/interfaces/pricing/IPricing"
 import { getPriceHistory } from "@/actions/pricing/getPriceHistory"
 import { getPriceCheck } from "@/actions/pricing/getPriceCheck"
 import { updatePrice } from "@/actions/pricing/updatePrice"
 import { createOffer } from "@/actions/pricing/createOffer"
 import { updateOffer } from "@/actions/pricing/updateOffer"
+import { useAuth } from "@/stores/user.store"
 import { toast } from "sonner"
 
 const toNumber = (value: unknown): number | null => {
@@ -47,12 +54,16 @@ const getFirstValidNumber = (...values: unknown[]): number => {
 const toPrice = (value: unknown) =>
     new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(toNumber(value) ?? 0)
 
-const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" })
+const formatDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"
+
+const getHistoryDate = (historyItem: IPriceHistoryItem) => historyItem.createdAt ?? historyItem.effectiveDate ?? ""
+
+const getPriceTypeLabel = (priceType: string) => (priceType.toLowerCase() === "list" ? "Plaza" : "Costo")
 
 type Tab = "price-check" | "history" | "offer"
 
-type PricingStoreProduct = IStoreProduct & {
+type PricingStoreProduct = Partial<IStoreProduct> & {
     priceCost?: number | string
     priceList?: number | string
     stock?: number
@@ -78,11 +89,22 @@ interface PricingModalProps {
     variation: IProductVariation
     storeProduct?: IStoreProduct // storeProductID requerido para ofertas
     storeID: string
+    onPriceUpdated?: (updatedPrice: IUpdatePriceResponse) => void
 }
 
-export function PricingModal({ isOpen, onClose, product, variation, storeProduct, storeID }: PricingModalProps) {
+export function PricingModal({
+    isOpen,
+    onClose,
+    product,
+    variation,
+    storeProduct,
+    storeID,
+    onPriceUpdated,
+}: PricingModalProps) {
+    const { user } = useAuth()
     const [tab, setTab] = useState<Tab>("price-check")
-    const currentStoreProduct = storeProduct as PricingStoreProduct | undefined
+    const [updatedStoreProduct, setUpdatedStoreProduct] = useState<PricingStoreProduct | null>(null)
+    const currentStoreProduct = (updatedStoreProduct ?? storeProduct) as PricingStoreProduct | undefined
     const currentVariation = variation as PricingVariation
     const currentPriceList = getFirstValidNumber(
         currentStoreProduct?.priceList,
@@ -106,7 +128,7 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
 
     // ── Actualizar precio ────────────────────────────────────────────────────
     const [newPrice, setNewPrice] = useState("")
-    const [priceType, setPriceType] = useState<"LIST" | "COST">("LIST")
+    const [priceType, setPriceType] = useState<PriceType>("list")
     const [priceReason, setPriceReason] = useState("")
     const [savingPrice, setSavingPrice] = useState(false)
 
@@ -119,6 +141,10 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
         if (!isOpen || tab !== "offer") return
         setOfferForm(buildOfferForm(priceCheck?.activeOffer))
     }, [isOpen, tab, priceCheck?.activeOffer])
+
+    useEffect(() => {
+        setUpdatedStoreProduct(null)
+    }, [storeProduct?.storeProductID])
 
     // ── Carga inicial según tab ──────────────────────────────────────────────
     useEffect(() => {
@@ -148,13 +174,34 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
         }
         setSavingPrice(true)
         try {
-            await updatePrice({
+            const updatedPrice = await updatePrice({
                 storeID,
                 variationID: variation.variationID,
                 priceType,
                 newPrice: parsed,
                 reason: priceReason || undefined,
+                changedBy: user?.name || user?.email || undefined,
             })
+
+            if (updatedPrice.storeProduct) {
+                setUpdatedStoreProduct(updatedPrice.storeProduct)
+                onPriceUpdated?.(updatedPrice)
+                setPriceCheck((current) => {
+                    if (!current || priceType !== "list") return current
+
+                    const basePrice = getFirstValidNumber(updatedPrice.storeProduct.priceList, parsed)
+                    return {
+                        ...current,
+                        basePrice,
+                        finalPrice: current.hasActiveOffer ? current.finalPrice : basePrice,
+                    }
+                })
+            }
+
+            if (storeProduct?.storeProductID) {
+                getPriceCheck(storeProduct.storeProductID).then(setPriceCheck).catch(() => undefined)
+            }
+
             toast.success("Precio actualizado correctamente")
             setNewPrice("")
             setPriceReason("")
@@ -358,11 +405,11 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                                             <Label className="text-xs text-gray-500">Tipo de precio</Label>
                                             <select
                                                 value={priceType}
-                                                onChange={(e) => setPriceType(e.target.value as "LIST" | "COST")}
+                                                onChange={(e) => setPriceType(e.target.value as PriceType)}
                                                 className="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 bg-white dark:bg-slate-800 dark:text-white"
                                             >
-                                                <option value="LIST">Precio Plaza (LIST)</option>
-                                                <option value="COST">Precio Costo (COST)</option>
+                                                <option value="list">Precio Plaza (LIST)</option>
+                                                <option value="cost">Precio Costo (COST)</option>
                                             </select>
                                         </div>
                                         <div>
@@ -425,9 +472,11 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                                         <div className="flex flex-col gap-0.5">
                                             <div className="flex items-center gap-2">
                                                 <Badge variant="outline" className="text-xs">
-                                                    {h.priceType === "LIST" ? "Plaza" : "Costo"}
+                                                    {getPriceTypeLabel(h.priceType)}
                                                 </Badge>
-                                                <span className="text-xs text-gray-400">{formatDate(h.createdAt)}</span>
+                                                <span className="text-xs text-gray-400">
+                                                    {formatDate(getHistoryDate(h))}
+                                                </span>
                                             </div>
                                             {h.reason && (
                                                 <p className="text-xs text-gray-500 italic">&quot;{h.reason}&quot;</p>

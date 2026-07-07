@@ -1,4 +1,4 @@
-export type PriceType = "LIST" | "COST"
+export type PriceType = "list" | "cost"
 export type DiscountType = "PERCENTAGE" | "FIXED_AMOUNT" | "FIXED_PRICE"
 export type DiscountScope = "UNIT" | "TOTAL"
 
@@ -13,11 +13,24 @@ export interface IUpdatePricePayload {
     changedBy?: string
 }
 
+export interface IUpdatePriceStoreProduct {
+    storeProductID: string
+    stock: number
+    priceCost: number
+    priceList: number
+    createdAt: string
+    updatedAt: string
+}
+
 export interface IUpdatePriceResponse {
-    message: string
-    variationID: string
+    historyID: string
+    storeProduct: IUpdatePriceStoreProduct
     priceType: PriceType
+    oldPrice: number
     newPrice: number
+    reason?: string | null
+    effectiveDate: string
+    changedBy?: string | null
 }
 
 // ─── Historial de precios ─────────────────────────────────────────────────────
@@ -31,7 +44,8 @@ export interface IPriceHistoryItem {
     newPrice: number
     reason?: string
     changedBy?: string
-    createdAt: string
+    createdAt?: string
+    effectiveDate?: string
 }
 
 // ─── Ofertas especiales ───────────────────────────────────────────────────────
