@@ -23,6 +23,7 @@ import { IProductVariation } from "@/interfaces/products/IProductVariation"
 import type { FlattenedItem } from "@/interfaces/products/IFlatternProduct"
 import type { IProduct } from "@/interfaces/products/IProduct"
 import type { IStoreProduct } from "@/interfaces/products/IProductVariation"
+import type { IUpdatePriceResponse } from "@/interfaces/pricing/IPricing"
 import { PricingModal } from "./PricingModal"
 
 interface InventoryTableProps {
@@ -44,12 +45,38 @@ const calculateMarkup = (priceCost: number, priceList: number): string => {
     return markup.toFixed(2)
 }
 
+const getCategoryChildren = (category: ICategory): ICategory[] => {
+    const categoryWithChildren = category as ICategory & { children?: ICategory[] }
+    return category.subcategories ?? categoryWithChildren.children ?? []
+}
+
+const findCategoryById = (
+    categories: ICategory[],
+    categoryID: string,
+    parent: ICategory | null = null,
+): { category: ICategory; parent: ICategory | null } | null => {
+    for (const category of categories) {
+        if (category.categoryID === categoryID) {
+            return { category, parent }
+        }
+
+        const childMatch = findCategoryById(getCategoryChildren(category), categoryID, category)
+        if (childMatch) return childMatch
+    }
+
+    return null
+}
+
 const getCategoryFullNameFromProduct = (product: IRawProduct, categories: ICategory[]): string => {
-    const cat = product.category
-    if (!cat) return "-"
-    if (!cat.parentID) return cat.name
-    const parent = categories.find((c) => c.categoryID === cat.parentID)
-    return parent ? `${parent.name} / ${cat.name}` : cat.name
+    const categoryID = product.category?.categoryID || product.categoryID
+    if (!categoryID) return "-"
+
+    const match = findCategoryById(categories, categoryID)
+    const category = match?.category ?? product.category
+    if (!category?.name) return "-"
+
+    const parent = match?.parent ?? categories.find((c) => c.categoryID === category.parentID)
+    return parent?.name ? `${parent.name} / ${category.name}` : category.name
 }
 
 export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProduct, categories }: InventoryTableProps) {
@@ -60,6 +87,7 @@ export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProdu
     const storeID = searchParams.get("storeID") || storeSelected?.storeID || null
     const [openSku, setOpenSku] = useState<string | null>(null)
     const [pricingVariation, setPricingVariation] = useState<PricingVariationState>(null)
+    const [revealedCostSku, setRevealedCostSku] = useState<string | null>(null)
     const printBarcodeModal = (sku: string | null) => {
         setOpenSku(sku)
     }
@@ -256,6 +284,8 @@ export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProdu
                                                         ? "cursor-pointer dark:hover:bg-gray-800 hover:bg-gray-50"
                                                         : ""
                                                 }`}
+                                                onMouseEnter={() => setRevealedCostSku(variation.sku)}
+                                                onMouseLeave={() => setRevealedCostSku(null)}
                                                 onClick={() => {
                                                     if (!isEditable) return
                                                     setEditingField({ sku: variation.sku, field: "priceCost" })
@@ -283,7 +313,11 @@ export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProdu
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <span className="font-semibold text-sm blur-sm hover:blur-0 transition-[filter] duration-300 ease-out">
+                                                    <span
+                                                        className={`font-semibold text-sm transition-[filter] duration-300 ease-out ${
+                                                            revealedCostSku === variation.sku ? "blur-0" : "blur-sm"
+                                                        }`}
+                                                    >
                                                         ${toPrice(priceCost)}
                                                     </span>
                                                 )}
@@ -516,6 +550,59 @@ function PricingModalWrapper({
     if (!pricingVariation || !storeID) return null
     const { product, variation } = pricingVariation
     const storeProduct = variation.storeProducts?.find((sp) => sp.storeID === storeID)
+
+    const handlePriceUpdated = ({ storeProduct: updatedStoreProduct }: IUpdatePriceResponse) => {
+        const applyUpdatedStoreProduct = (storeProducts: IProductVariationRaw["storeProducts"] = []) =>
+            storeProducts.map((sp) =>
+                sp.storeProductID === updatedStoreProduct.storeProductID
+                    ? {
+                          ...sp,
+                          stock: updatedStoreProduct.stock,
+                          priceCost: updatedStoreProduct.priceCost,
+                          priceList: updatedStoreProduct.priceList,
+                          updatedAt: updatedStoreProduct.updatedAt,
+                      }
+                    : sp,
+            )
+
+        const { rawProducts, setRawProducts } = inventoryStore.getState()
+        const inventoryProducts = rawProducts as IRawProduct[]
+
+        setRawProducts(
+            inventoryProducts.map((rawProduct: IRawProduct) =>
+                rawProduct.productID === product.productID
+                    ? {
+                          ...rawProduct,
+                          variations: rawProduct.variations.map((rawVariation: IProductVariationRaw) => {
+                              if (rawVariation.variationID !== variation.variationID) return rawVariation
+
+                              const storeProducts = applyUpdatedStoreProduct(rawVariation.storeProducts)
+                              return {
+                                  ...rawVariation,
+                                  storeProducts,
+                                  StoreProducts: storeProducts,
+                              }
+                          }),
+                      }
+                    : rawProduct,
+            ),
+        )
+
+        setPricingVariation((current) => {
+            if (!current || current.variation.variationID !== variation.variationID) return current
+
+            const storeProducts = applyUpdatedStoreProduct(current.variation.storeProducts)
+            return {
+                ...current,
+                variation: {
+                    ...current.variation,
+                    storeProducts,
+                    StoreProducts: storeProducts,
+                },
+            }
+        })
+    }
+
     return (
         <PricingModal
             isOpen
@@ -524,6 +611,7 @@ function PricingModalWrapper({
             variation={variation as unknown as IProductVariation}
             storeProduct={storeProduct as unknown as IStoreProduct}
             storeID={storeID}
+            onPriceUpdated={handlePriceUpdated}
         />
     )
 }

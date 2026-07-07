@@ -73,6 +73,20 @@ function NumericInputWithArrows({ value, onChange, placeholder, className }: Num
     )
 }
 
+const normalizeSearchText = (value: unknown): string =>
+    String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim()
+
+const getSearchTokens = (value: string): string[] => normalizeSearchText(value).split(/\s+/).filter(Boolean)
+
+const matchesAllTokens = (value: unknown, tokens: string[]): boolean => {
+    const normalizedValue = normalizeSearchText(value)
+    return tokens.every((token) => normalizedValue.includes(token))
+}
+
 export function ColumnFilters({ filters, onFilterChange, onClearFilters }: ColumnFiltersProps) {
     const hasActiveFilters = filters
         ? Object.values(filters).some((value) => (typeof value === "string" ? value.trim() !== "" : value === true))
@@ -153,7 +167,7 @@ export function ColumnFilters({ filters, onFilterChange, onClearFilters }: Colum
 
                 {/* Clear Filters Button */}
                 {hasActiveFilters && (
-                    <div className="flex py-5 px-2 rounded-md bg-red-500 dark:hover:bg-red-600 cursor-pointer dark:bg-red-700 flex-shrink-0">
+                    <div className="flex py-5 px-2 rounded-md bg-red-500 dark:hover:bg-red-600 cursor-pointer dark:bg-red-700 shrink-0">
                         <button
                             onClick={onClearFilters}
                             className="h-8 px-2 text-xs flex flex-col items-center gap-1 text-white whitespace-nowrap"
@@ -173,24 +187,27 @@ export function applyColumnFilters(products: any[], filters: any) {
     const filteredProducts = products.filter((product) => {
         // PRODUCTO filter (name, sku, genre)
         if (filters.producto.trim()) {
-            const searchTerm = filters.producto.toLowerCase()
-            const nameMatch = product.name.toLowerCase().includes(searchTerm)
-            const skuMatch = (product.variations || []).some((v: any) => v.sku === searchTerm)
-            const genreMatch = product.genre?.toLowerCase().includes(searchTerm)
+            const searchTokens = getSearchTokens(filters.producto)
+            const productSearchValue = [
+                product.name,
+                product.genre,
+                product.brand,
+                ...(product.variations || []).map((variation: any) => variation.sku),
+            ].join(" ")
 
-            if (!(nameMatch || skuMatch || genreMatch)) return false
+            if (!matchesAllTokens(productSearchValue, searchTokens)) return false
         }
 
         // MARCA filter
         if (filters.marca.trim()) {
-            const brandMatch = product.brand?.toLowerCase().includes(filters.marca.toLowerCase())
+            const brandMatch = matchesAllTokens(product.brand, getSearchTokens(filters.marca))
             if (!brandMatch) return false
         }
 
         // CATEGORÍA filter
         if (filters.categoria.trim()) {
-            const categoryName = product.category?.name?.toLowerCase() || ""
-            if (!categoryName.includes(filters.categoria.toLowerCase())) return false
+            const categoryName = product.category?.name || ""
+            if (!matchesAllTokens(categoryName, getSearchTokens(filters.categoria))) return false
         }
 
         return true
@@ -217,7 +234,7 @@ export function applyVariationFilters(variations: any[], filters: any, adminStor
     return variations.filter(({ variation }) => {
         // TALLA filter
         if (filters.talla.trim()) {
-            const sizeMatch = variation.size?.toLowerCase().includes(filters.talla.toLowerCase())
+            const sizeMatch = matchesAllTokens(variation.size, getSearchTokens(filters.talla))
             if (!sizeMatch) return false
         }
 
