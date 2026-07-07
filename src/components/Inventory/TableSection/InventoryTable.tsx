@@ -44,12 +44,38 @@ const calculateMarkup = (priceCost: number, priceList: number): string => {
     return markup.toFixed(2)
 }
 
+const getCategoryChildren = (category: ICategory): ICategory[] => {
+    const categoryWithChildren = category as ICategory & { children?: ICategory[] }
+    return category.subcategories ?? categoryWithChildren.children ?? []
+}
+
+const findCategoryById = (
+    categories: ICategory[],
+    categoryID: string,
+    parent: ICategory | null = null,
+): { category: ICategory; parent: ICategory | null } | null => {
+    for (const category of categories) {
+        if (category.categoryID === categoryID) {
+            return { category, parent }
+        }
+
+        const childMatch = findCategoryById(getCategoryChildren(category), categoryID, category)
+        if (childMatch) return childMatch
+    }
+
+    return null
+}
+
 const getCategoryFullNameFromProduct = (product: IRawProduct, categories: ICategory[]): string => {
-    const cat = product.category
-    if (!cat) return "-"
-    if (!cat.parentID) return cat.name
-    const parent = categories.find((c) => c.categoryID === cat.parentID)
-    return parent ? `${parent.name} / ${cat.name}` : cat.name
+    const categoryID = product.category?.categoryID || product.categoryID
+    if (!categoryID) return "-"
+
+    const match = findCategoryById(categories, categoryID)
+    const category = match?.category ?? product.category
+    if (!category?.name) return "-"
+
+    const parent = match?.parent ?? categories.find((c) => c.categoryID === category.parentID)
+    return parent?.name ? `${parent.name} / ${category.name}` : category.name
 }
 
 export function InventoryTable({ currentItems, handleSaveEdit, handleDeleteProduct, categories }: InventoryTableProps) {
