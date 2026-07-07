@@ -12,30 +12,47 @@ interface Filters {
   stockAgregado: string
 }
 
+const normalizeSearchText = (value: unknown): string =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+
+const getSearchTokens = (value: string): string[] => normalizeSearchText(value).split(/\s+/).filter(Boolean)
+
+const matchesAllTokens = (value: unknown, tokens: string[]): boolean => {
+  const normalizedValue = normalizeSearchText(value)
+  return tokens.every((token) => normalizedValue.includes(token))
+}
+
 export function useColumnFilters(products: any[], variations: any[], filters: Filters, adminStoreIDs: string[]) {
   // FILTRO DE PRODUCTOS
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       // PRODUCTO filter (name, sku, genre)
       if (filters.producto.trim()) {
-        const searchTerm = filters.producto.toLowerCase()
-        const nameMatch = product.name.toLowerCase().includes(searchTerm)
-        const skuMatch = product.ProductVariations.some((v: any) => v.sku === searchTerm)
-        const genreMatch = product.genre?.toLowerCase().includes(searchTerm)
+        const searchTokens = getSearchTokens(filters.producto)
+        const productSearchValue = [
+          product.name,
+          product.genre,
+          product.brand,
+          ...(product.ProductVariations || []).map((variation: any) => variation.sku),
+        ].join(" ")
 
-        if (!(nameMatch || skuMatch || genreMatch)) return false
+        if (!matchesAllTokens(productSearchValue, searchTokens)) return false
       }
 
       // MARCA filter
       if (filters.marca.trim()) {
-        const brandMatch = product.brand?.toLowerCase().includes(filters.marca.toLowerCase())
+        const brandMatch = matchesAllTokens(product.brand, getSearchTokens(filters.marca))
         if (!brandMatch) return false
       }
 
       // CATEGORÍA filter
       if (filters.categoria.trim()) {
-        const categoryName = product.Category?.name?.toLowerCase() || ""
-        if (!categoryName.includes(filters.categoria.toLowerCase())) return false
+        const categoryName = product.Category?.name || ""
+        if (!matchesAllTokens(categoryName, getSearchTokens(filters.categoria))) return false
       }
 
       return true
@@ -47,7 +64,7 @@ export function useColumnFilters(products: any[], variations: any[], filters: Fi
     return variations.filter(({ variation }) => {
       // TALLA filter
       if (filters.talla.trim()) {
-        const sizeMatch = variation.sizeNumber?.toLowerCase().includes(filters.talla.toLowerCase())
+        const sizeMatch = matchesAllTokens(variation.sizeNumber, getSearchTokens(filters.talla))
         if (!sizeMatch) return false
       }
 
