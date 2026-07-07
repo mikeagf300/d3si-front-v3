@@ -28,12 +28,39 @@ import { createOffer } from "@/actions/pricing/createOffer"
 import { updateOffer } from "@/actions/pricing/updateOffer"
 import { toast } from "sonner"
 
-const toPrice = (n: number) => new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(n)
+const toNumber = (value: unknown): number | null => {
+    if (value === undefined || value === null || value === "") return null
+
+    const parsed = typeof value === "number" ? value : Number(value.toString().replace(/[^\d.-]/g, ""))
+    return Number.isFinite(parsed) ? parsed : null
+}
+
+const getFirstValidNumber = (...values: unknown[]): number => {
+    for (const value of values) {
+        const parsed = toNumber(value)
+        if (parsed !== null) return parsed
+    }
+
+    return 0
+}
+
+const toPrice = (value: unknown) =>
+    new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(toNumber(value) ?? 0)
 
 const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" })
 
 type Tab = "price-check" | "history" | "offer"
+
+type PricingStoreProduct = IStoreProduct & {
+    priceCost?: number | string
+    priceList?: number | string
+    stock?: number
+}
+
+type PricingVariation = IProductVariation & {
+    size?: string
+}
 
 const buildOfferForm = (offer?: IPriceCheck["activeOffer"]) => ({
     discountType: offer?.discountType ?? ("PERCENTAGE" as DiscountType),
@@ -55,6 +82,19 @@ interface PricingModalProps {
 
 export function PricingModal({ isOpen, onClose, product, variation, storeProduct, storeID }: PricingModalProps) {
     const [tab, setTab] = useState<Tab>("price-check")
+    const currentStoreProduct = storeProduct as PricingStoreProduct | undefined
+    const currentVariation = variation as PricingVariation
+    const currentPriceList = getFirstValidNumber(
+        currentStoreProduct?.priceList,
+        currentStoreProduct?.priceListStore,
+        variation.priceList,
+    )
+    const currentPriceCost = getFirstValidNumber(
+        currentStoreProduct?.priceCost,
+        currentStoreProduct?.priceCostStore,
+        variation.priceCost,
+    )
+    const variationSize = variation.sizeNumber || currentVariation.size || "-"
 
     // ── Price check ──────────────────────────────────────────────────────────
     const [priceCheck, setPriceCheck] = useState<IPriceCheck | null>(null)
@@ -186,7 +226,7 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                         <Tag className="w-5 h-5 text-blue-500" />
                         Pricing — <span className="text-blue-600">{product.name}</span>
                         <Badge variant="outline" className="text-xs ml-1">
-                            Talla {variation.sizeNumber}
+                            Talla {variationSize}
                         </Badge>
                         {hasOffer && (
                             <Badge className="bg-orange-500 text-white text-xs ml-1 animate-pulse">
@@ -232,13 +272,13 @@ export function PricingModal({ isOpen, onClose, product, variation, storeProduct
                                     <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 text-center">
                                         <p className="text-xs text-gray-500 mb-1">Precio Plaza (catálogo)</p>
                                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                                            {toPrice(variation.priceList)}
+                                            {toPrice(currentPriceList)}
                                         </p>
                                     </div>
                                     <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 text-center">
-                                        <p className="text-xs text-gray-500 mb-1">Precio Costo</p>
+                                        <p className="text-xs text-gray-500 mb-1">Costo Neto</p>
                                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                                            {toPrice(variation.priceCost)}
+                                            {toPrice(currentPriceCost)}
                                         </p>
                                     </div>
                                 </div>
